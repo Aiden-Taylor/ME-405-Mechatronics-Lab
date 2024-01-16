@@ -10,11 +10,15 @@ pinC0 = pyb.Pin(pyb.Pin.board.PC0, pyb.Pin.OUT_PP)
 
 pinB0ADC = pyb.ADC(pyb.Pin.board.PC0)
 
+
+QUEUE_SIZE = 42
+int_queue = cqueue.IntQueue(QUEUE_SIZE) #from 405 library documentation
+
 #create interrupt
 
 def timer_int(tim_num):
     
-    
+    int_queue.put()    
 
 
 
@@ -22,12 +26,9 @@ def timer_int(tim_num):
 
 def step_response(): #how you define a function
     pinC0.value(1)
-    tim = 0
-    val = 0
-    while val < 3.4:
-        time.sleep_ms(10) #sleeps for 10 ms 
-        tim += 10         #indicate that 10 seconds has passed
-        val = pinB0ADC.read()/3.3
-        print(tim, ",", val)
 
-step_response()
+
+if __name__ == "__main__":
+
+    step_response(...parameters...)
+
