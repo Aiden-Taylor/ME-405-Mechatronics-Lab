@@ -17,7 +17,7 @@ time = [] #empty time list
 value_queue = cqueue.IntQueue(QUEUE_SIZE) #from 405 library documentation
 
 for i in range(QUEUE_SIZE):
-    time.append(0.01*i)
+    time.append(10*i)
     
     #while printing create the time variables 
     
@@ -38,16 +38,23 @@ def timer_int(tim_num):
 #create step response function 
 
 def step_response():                 
-    pinC0.value(0)
     tim.callback(timer_int)          # set the callback to our timer_int function
+    pinC0.value(0)
     pinC0.value(1)
     
     while not value_queue.full():
         pass              
     
+    n = 0
+    pinC0.value(0)
+    print("Time (ms)",",","ADC Value (V)")
+
     #run a for loop through time run get on the queue
-    for val in time:
-        print(f"{val},{value_queue.get(val)) #not sure if this is correct     
+    while not value_queue.available() == 0:
+        
+        print(f"{time[n]}         ,{value_queue.get()*3.3/4095}") #not sure if this is correct
+        #print(value_queue.get())
+        n = n + 1      
     #print(value_queue)
     print("end")
     
