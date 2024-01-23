@@ -1,3 +1,7 @@
+"""! @file step_response.py
+  The main file for our week 1 step response test
+  """
+
 #import relevant modules 
 
 import pyb 
@@ -26,7 +30,9 @@ tim = pyb.Timer(2, freq=100)      # create a timer object using timer 4 - trig
 #create interrupt
 
 def timer_int(tim_num):
-    
+    """!
+      The timer_int function reads the pin and puts the value into the the queue of read values to be later output
+      """
     #time_queue.put(tim_num.counter())
     val = pinB0ADC.read()
     value_queue.put(val)
@@ -38,6 +44,11 @@ def timer_int(tim_num):
 #create step response function 
 
 def step_response():                 
+    """!
+      The step_response function sets the callback to the timer_int function, sets the output pin, and prints the heading.
+      Then, it loops through the output queue and prints the values from the step response reading
+      """
+    
     tim.callback(timer_int)          # set the callback to our timer_int function
     pinC0.value(0)
     pinC0.value(1)
