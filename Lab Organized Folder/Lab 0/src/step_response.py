@@ -1,5 +1,5 @@
 """! @file step_response.py
-  The main file for our week 1 step response test
+  The step response file for our week 1 step response test (Should be the same as main.py at the moment)
   """
 
 #import relevant modules 

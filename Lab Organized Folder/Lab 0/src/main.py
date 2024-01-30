@@ -1,4 +1,4 @@
-"""! @file step_response.py
+"""! @file main.py
   The main file for our week 1 step response test
   """
 
