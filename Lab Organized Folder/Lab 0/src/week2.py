@@ -1,6 +1,5 @@
 """!
-@file lab0week2.py
-
+@file week2.py
 Send a step response function to the micro controller and measure the result.
 Plot the output in a GUI with a theoretical curve plotted on the same graph.
 
@@ -9,9 +8,10 @@ https://matplotlib.org/stable/gallery/user_interfaces/embedding_in_tk_sgskip.htm
 
 @author Julia Fay & Jack Foxcroft & Aiden Taylor
 @date   2024-1-23 Original program, based on example from above listed source
-and provided to us from the lab instructor. 
+and provided to us from the lab instructor.
 @copyright (c) 2023 by Spluttflob and released under the GNU Public Licenes V3
 """
+
 
 import math
 import time
@@ -21,36 +21,51 @@ from serial import Serial
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
-time = []
+times = []
 voltage = []
+
+xsim = [None] * 2000
+ysim = [None] * 2000
+for x in range(0, 2000):
+    xsim[x] = x
+    expon = -1*.001*x/(0.1*3.3)
+    ysim[x] = 3.044*(1-pow(math.e, expon))
 
 #this is not correct but the start of something working
 
 def read_input():
+    """!
+        The read_input function first runs the main.py file on the mcu that triggers the step response
+        and stores the data. Then it reads the step response data from the serial port and stores the
+        csv data in the time and voltage arrays.
+        
+        """
 
     # Define the serial port and baud rate
-    serial_port = 'COM5'  #change to match the port of the computer this is being run on
+    serial_port = 'COM3'  #change to match the port of the computer this is being run on
     baud_rate = 115200  # Set the baud rate to match your MCU's configuration
         
     with Serial(serial_port, baud_rate, timeout=1) as ser:
         ser.write(b"\x03") #sends a ctrl+c
         ser.write(b"\x04") #sends a ctrl+d
-        
+        time.sleep(5)
+
         # Read data from the serial port
         for line in ser: 
                         # Read data from the serial port
                 try:
                     line = line.decode('utf-8').strip()
+                    print(line)
                     x = line.split('#')
                     x = x[0].split(',')
                     
-                    if line == 'end':
-                        pass
+                    if str(line) == 'end':
+                        break
                     
                     elif (x[0] != "\n") & (x[0] != ''):
                         #print(x)
                         try:
-                            time.append(float(x[0]))
+                            times.append(float(x[0]))
                         except Exception as e:
                             print(e)
                         try:
@@ -64,24 +79,27 @@ def read_input():
 
 def plot_step(plot_axes, plot_canvas, xlabel, ylabel):
     """!
-    Make an example plot to show a simple(ish) way to embed a plot into a GUI.
-    The data is just a nonsense simulation of a diving board from which a
-    typically energetic otter has just jumped.
+    The plot_step function makes a plot embeded into a GUI showing both the
+    measured step response data and the accompanying theoretical curve.
     @param plot_axes The plot axes supplied by Matplotlib
     @param plot_canvas The plot canvas, also supplied by Matplotlib
     @param xlabel The label for the plot's horizontal axis
     @param ylabel The label for the plot's vertical axis
     """
+
     # Here we create some fake data. It is put into an X-axis list (times) and
     # a Y-axis list (boing). Real test data will be read through the USB-serial
     # port and processed to make two lists like these
     read_input()
 
     # Draw the plot. Of course, the axes must be labeled. A grid is optional
-    plot_axes.plot(time, voltage)
+    
+    plot_axes.plot(xsim, ysim, color="orange")
+    plot_axes.plot(times, voltage)
     plot_axes.set_xlabel(xlabel)
     plot_axes.set_ylabel(ylabel)
     plot_axes.grid(True)
+    plot_axes.legend(['Theoretical Output', 'Actual Output'], loc=4)
     plot_canvas.draw()
 
 
@@ -91,12 +109,13 @@ def tk_matplot(plot_function, xlabel, ylabel, title):
     This function makes the window, displays it, and runs the user interface
     until the user closes the window. The plot function, which must have been
     supplied by the user, should draw the plot on the supplied plot axes and
-    call the draw() function belonging to the plot canvas to show the plot. 
+    call the draw() function belonging to the plot canvas to show the plot.
     @param plot_function The function which, when run, creates a plot
     @param xlabel The label for the plot's horizontal axis
     @param ylabel The label for the plot's vertical axis
     @param title A title for the plot; it shows up in window title bar
     """
+
     # Create the main program window and give it a title
     tk_root = tkinter.Tk()
     tk_root.wm_title(title)

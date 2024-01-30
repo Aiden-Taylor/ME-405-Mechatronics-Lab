@@ -67,6 +67,7 @@ def step_response():
         #print(value_queue.get())
         n = n + 1      
     #print(value_queue)
+    pinC0.value(0)
     print("end")
     
 
