@@ -27,6 +27,12 @@ voltage = []
 #this is not correct but the start of something working
 
 def read_input():
+"""!
+      The read_input function first runs the main.py file on the mcu that triggers the step response
+      and stores the data. Then it reads the step response data from the serial port and stores the
+      csv data in the time and voltage arrays. 
+      
+      """
 
     # Define the serial port and baud rate
     serial_port = 'COM5'  #change to match the port of the computer this is being run on
@@ -64,9 +70,8 @@ def read_input():
 
 def plot_step(plot_axes, plot_canvas, xlabel, ylabel):
     """!
-    Make an example plot to show a simple(ish) way to embed a plot into a GUI.
-    The data is just a nonsense simulation of a diving board from which a
-    typically energetic otter has just jumped.
+    The plot_step function makes a plot embeded into a GUI showing both the
+    measured step response data and the accompanying theoretical curve.
     @param plot_axes The plot axes supplied by Matplotlib
     @param plot_canvas The plot canvas, also supplied by Matplotlib
     @param xlabel The label for the plot's horizontal axis
@@ -139,6 +144,6 @@ if __name__ == "__main__":
     tk_matplot(plot_step,
                xlabel="Time (ms)",
                ylabel="Voltage (mV)",
-               title="Otterly Silly")
+               title="")
 
 
