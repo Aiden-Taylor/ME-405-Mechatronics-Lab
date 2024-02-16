@@ -18,8 +18,8 @@ motimer = 5
 cp1 = pyb.Pin.board.PC6
 cp2 = pyb.Pin.board.PC7
 cptimer = 8
-Kp_init = float(input("Input an initial Kp: "))
-setp_init = int(input("Input an intial setpoint: "))
+Kp_init = 1
+setp_init = 16384
 
 #establish controller class
 var = controller.P_Control(Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
@@ -39,14 +39,23 @@ while step_test:
         #one revolution and stop it at the final position.
     
     # 16,384 encoder ticks per revolution
-    setp_in = int(input("Give a setpoint. One revolution is about 16,384 encoder counts: "))
+    cnt = 0
+    Kp_init = float(input("Input a Kp: "))
+    var.set_Kp(Kp_init)
+    setp_in = 16384
     running = True
     timtimeint = utime.ticks_ms()
     while running:
-        if var.run(setp_in, timtimeint) < 5:
+        if var.run(setp_in, timtimeint) < 2:
+            cnt += 1
+            
+        else:
+            cnt = 0
+        
+        if cnt >= 5:
             running = False
             var.moe.set_duty_cycle(0)
-        
+
         utime.sleep_ms(10)
 
     var.zero()

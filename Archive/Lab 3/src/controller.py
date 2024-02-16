@@ -76,3 +76,4 @@ class P_Control():
             """
         for i in range(len(self.times)):
             print(str(self.times[i]) + "," + str(self.position[i]))
+        self.times = []
