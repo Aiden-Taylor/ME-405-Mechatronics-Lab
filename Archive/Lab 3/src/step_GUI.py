@@ -144,10 +144,10 @@ class Step_GUI():
 
 # This main code is run if this file is the main program but won't run if this
 # file is imported as a module by some other main program
-if __name__ == "__main__":
-    tk_matplot(
-               xlabel="Time (ms)",
-               ylabel="Voltage (mV)",
-               title="")
+# if __name__ == "__main__":
+tk_matplot(
+            xlabel="Time (ms)",
+            ylabel="Position",
+            title="DC Motor Control")
 
 

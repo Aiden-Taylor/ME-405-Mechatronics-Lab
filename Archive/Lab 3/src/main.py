@@ -4,7 +4,6 @@
   """
 
 import controller
-#from step_GUI import Step_GUI
 import pyb
 import utime
 
@@ -24,14 +23,10 @@ setp_init = 16384
 #establish controller class
 var = controller.P_Control(Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
 
-
-
-var.zero() 
-
-#var.run(setp_init)
-
+#init step_test to be true
 step_test = True 
 
+#loop to run multiple Kp values for one rotation each 
 while step_test:
     
     # which runs the controller, running closed-loop step response tests 
@@ -40,25 +35,34 @@ while step_test:
     
     # 16,384 encoder ticks per revolution
     cnt = 0
+
     Kp_init = float(input("Input a Kp: "))
+
+    #zero the encoder count and position
+    var.zero()
     var.set_Kp(Kp_init)
     setp_in = 16384
     running = True
     timtimeint = utime.ticks_ms()
-    while running:
-        if var.run(setp_in, timtimeint) < 2:
-            cnt += 1
-            
-        else:
-            cnt = 0
-        
-        if cnt >= 5:
-            running = False
-            var.moe.set_duty_cycle(0)
 
+    # Run the motor for 2 seconds
+    for n in range(200):
+        # # If PWM signal is less than 2 (approaching desired value)
+        # if var.run(setp_in, timtimeint) < 2:
+        #     cnt += 1
+        # # If PWM is still at a large value, keep cnt at 0      
+        # else:
+        #     cnt = 0
+        
+        # #if were done 
+        # if cnt >= 5:
+        #     running = False
+        #     var.moe.set_duty_cycle(0)
+        
+        var.run(setp_in, timtimeint)
         utime.sleep_ms(10)
 
-    var.zero()
+    var.moe.set_duty_cycle(0)
     var.print_res()
 
     if input('run another step test? y/n') != 'y':
