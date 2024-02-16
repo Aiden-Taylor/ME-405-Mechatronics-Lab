@@ -127,9 +127,8 @@ class Step_GUI():
                                     text="Clear",
                                     command=lambda: axes.clear() or canvas.draw())
         button_run = tkinter.Button(master=tk_root,
-                                    text="Run Test",
-                                    command=lambda: self.plot_step(axes, canvas,
-                                                                xlabel, ylabel))
+                                    text="Run Test", 
+                                    command=lambda: self.plot_step(axes, canvas, xlabel, ylabel))
 
         # Arrange things in a grid because "pack" is weird
         canvas.get_tk_widget().grid(row=0, column=0, columnspan=3)
@@ -145,7 +144,10 @@ class Step_GUI():
 # This main code is run if this file is the main program but won't run if this
 # file is imported as a module by some other main program
 # if __name__ == "__main__":
-tk_matplot(
+
+
+var = Step_GUI('Com6')
+var.tk_matplot(
             xlabel="Time (ms)",
             ylabel="Position",
             title="DC Motor Control")
