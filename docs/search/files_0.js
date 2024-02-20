@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['encoder_5freader_2epy_0',['encoder_reader.py',['../encoder__reader_8py.html',1,'']]]
+  ['controller_2epy_0',['controller.py',['../controller_8py.html',1,'']]]
 ];
