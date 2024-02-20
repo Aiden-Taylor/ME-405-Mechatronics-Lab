@@ -36,8 +36,8 @@ while step_test:
     # 16,384 encoder ticks per revolution
     cnt = 0
 
-    Kp_init = float(input("Input a Kp: "))
-
+    #Kp_init = float(input("Input a Kp: "))
+    Kp_init = 0.05
     #zero the encoder count and position
     var.zero()
     var.set_Kp(Kp_init)
@@ -64,6 +64,6 @@ while step_test:
 
     var.moe.set_duty_cycle(0)
     var.print_res()
-
-    if input('run another step test? y/n') != 'y':
-        step_test = False 
+    step_test = False #for the ser output
+    # if input('run another step test? y/n') != 'y':
+    #     step_test = False 
