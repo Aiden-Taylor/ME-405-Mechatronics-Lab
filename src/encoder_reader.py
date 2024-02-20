@@ -28,8 +28,8 @@ class Encoder:
         #put some stuff here
 
         # pin1 and pin2 inputs should be in this format: pyb.Pin.board.PB7
-        p1 = pyb.Pin(pin1, mode=pyb.Pin.IN)
-        p2 = pyb.Pin(pin2, mode=pyb.Pin.IN)
+        self.p1 = pyb.Pin(pin1, mode=pyb.Pin.IN)
+        self.p2 = pyb.Pin(pin2, mode=pyb.Pin.IN)
         
         #initialize the timer with a prescaler of 0 and period of 65535 (maximum integer for 16 bit nuber)
         self.tim = pyb.Timer(timer, prescaler=0, period=65535)
@@ -42,8 +42,8 @@ class Encoder:
         #prescaler: number of encoder ticks before timer count updates
 
         #setup channels 1 and 2 for the timer
-        ch1 = self.tim.channel(1, mode=pyb.Timer.ENC_AB, pin=pin1)
-        ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
+        self.ch1 = self.tim.channel(1, mode=pyb.Timer.ENC_AB, pin=pin1)
+        self.ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
 
     def read(self):
         """!
