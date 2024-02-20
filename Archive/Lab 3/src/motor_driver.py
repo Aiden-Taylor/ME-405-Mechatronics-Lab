@@ -1,5 +1,11 @@
 """! @file motor_driver.py
-  The main file for our week 4 Lab 2
+  
+  This file is responsible for implementing the speed control for a motor using a PWM signal that 
+  can be modified based on the users input. This file can be used on multiple motors in a main 
+  file at the same time as it takes the motor pins as an input. 
+
+  @author Aiden Taylor, Julia Fay, Jack Foxcroft
+  
   """
 
 #import relevant modules 
