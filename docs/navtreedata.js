@@ -24,7 +24,7 @@
 */
 var NAVTREE =
 [
-  [ "Encoder Reader", "index.html", [
+  [ "Lab 4", "index.html", [
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],

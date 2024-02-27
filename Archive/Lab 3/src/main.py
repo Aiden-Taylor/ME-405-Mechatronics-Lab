@@ -1,5 +1,9 @@
 """! @file main.py
-  The main file for our Lab 3 Motor Controller Assignment
+  The main file for our Lab 3 Motor Controller Assignment. This file creates a 
+  P_controller class object and runs a loop to test several Kp values to find the ideal 
+  Kp value for motor control. 
+
+
   @author Aiden Taylor, Julia Fay, Jack Foxcroft
   """
 
@@ -29,12 +33,10 @@ step_test = True
 #loop to run multiple Kp values for one rotation each 
 while step_test:
     
-    # which runs the controller, running closed-loop step response tests 
-        #in which the setpoint is changed so as to rotate the motor by about 
-        #one revolution and stop it at the final position.
-    
-    # 16,384 encoder ticks per revolution
-    cnt = 0
+    #runs the controller, running closed-loop step response tests 
+    #in which the setpoint is changed so as to rotate the motor by about 
+    #one revolution and stop it at the final position.
+    #Note:16,384 encoder ticks per revolution
 
     #Kp_init = float(input("Input a Kp: "))
     Kp_init = 0.05
@@ -48,17 +50,6 @@ while step_test:
 
     # Run the motor for 2 seconds
     for n in range(200):
-        # # If PWM signal is less than 2 (approaching desired value)
-        # if var.run(setp_in, timtimeint) < 2:
-        #     cnt += 1
-        # # If PWM is still at a large value, keep cnt at 0      
-        # else:
-        #     cnt = 0
-        
-        # #if were done 
-        # if cnt >= 5:
-        #     running = False
-        #     var.moe.set_duty_cycle(0)
         
         var.run(setp_in, timtimeint)
         utime.sleep_ms(10)
