@@ -16,7 +16,7 @@ import utime
 
 class P_Control(): 
     """! 
-            This class implements P only motor control for a motor in the ME 405 kit. 
+            This class implements P only control for a motor in the ME 405 kit. 
             """
     
     def __init__(self, in_Kp, in_setpoint, enapin, timer, enp1, mp1, mp2, coderp1, coderp2, codertimer):

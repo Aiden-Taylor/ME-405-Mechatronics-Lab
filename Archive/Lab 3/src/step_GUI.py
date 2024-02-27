@@ -27,9 +27,9 @@ class Step_GUI():
     def __init__(self,in_serial_port):
     
         #initialize the time and voltage arrays 
-        self.time = []
-        self.voltage = []
-        self.serial_port = in_serial_port 
+        time = []
+        voltage = []
+        serial_port = in_serial_port 
 
     def read_input(self):
         """!
@@ -61,11 +61,11 @@ class Step_GUI():
                         elif (x[0] != "\n") & (x[0] != ''):
                             #print(x)
                             try:
-                                self.time.append(float(x[0]))
+                                time.append(float(x[0]))
                             except Exception as e:
                                 print(e)
                             try:
-                                self.voltage.append(float(x[1].replace('\n', '')))
+                                voltage.append(float(x[1].replace('\n', '')))
                             except Exception as e:
                                 print(e)
                                 
@@ -146,7 +146,7 @@ class Step_GUI():
 # if __name__ == "__main__":
 
 
-var = Step_GUI('COM3')
+var = Step_GUI('Com6')
 var.tk_matplot(
             xlabel="Time (ms)",
             ylabel="Position",

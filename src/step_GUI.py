@@ -27,9 +27,9 @@ class Step_GUI():
     def __init__(self,in_serial_port):
     
         #initialize the time and voltage arrays 
-        time = []
-        voltage = []
-        serial_port = in_serial_port 
+        self.time = []
+        self.voltage = []
+        self.serial_port = in_serial_port 
 
     def read_input(self):
         """!
@@ -61,11 +61,11 @@ class Step_GUI():
                         elif (x[0] != "\n") & (x[0] != ''):
                             #print(x)
                             try:
-                                time.append(float(x[0]))
+                                self.time.append(float(x[0]))
                             except Exception as e:
                                 print(e)
                             try:
-                                voltage.append(float(x[1].replace('\n', '')))
+                                self.voltage.append(float(x[1].replace('\n', '')))
                             except Exception as e:
                                 print(e)
                                 
@@ -140,16 +140,12 @@ class Step_GUI():
         # This function runs the program until the user decides to quit
         tkinter.mainloop()
 
-
 # This main code is run if this file is the main program but won't run if this
 # file is imported as a module by some other main program
 # if __name__ == "__main__":
 
-
-var = Step_GUI('Com6')
+var = Step_GUI('COM3')
 var.tk_matplot(
             xlabel="Time (ms)",
             ylabel="Position",
             title="DC Motor Control")
-
-
