@@ -50,8 +50,8 @@ def task2_fun(shares):
 
 def task3_fun():
     """!
-    Task which runs the controller for motor #1
-    @param shares A tuple of a share and queue from which this task gets data
+    Task which runs the controller for motor #1. 
+   
     """
     #loop to run multiple Kp values for one rotation each 
     
@@ -65,8 +65,8 @@ def task3_fun():
 
 def task4_fun():
     """!
-    Task which runs the controller for motor #2
-    @param shares A tuple of a share and queue from which this task gets data
+    Task which runs the controller for motor #2. 
+    
     """
     #loop to run multiple Kp values for one rotation each 
     

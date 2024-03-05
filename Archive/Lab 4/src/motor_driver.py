@@ -24,7 +24,28 @@ class MotorDriver:
         """! 
         Creates a motor driver by initializing GPIO
         pins and turning off the motor for safety. 
-        @param en_pin (There will be several parameters)
+        @param en_pin The value sent to the enable pin controlled by the microcontroller. When the en_pin
+               is set high, it enables the motor. 
+        @param in1pwm The initial pwm percentage value sent to the timer 
+               channel corresponding to the first motor pin. When in1pwm 
+               is set to 0, the motor runs in the forward direction.  
+        
+        @param in2pwm The initial pwm percentage value sent to the timer 
+               channel corresponding to the second motor pin. When in2pwm 
+               is set to 0, the motor runs in the reverse direction. 
+        
+        @param timer The timer channel that corresponds with the motor pins 
+               used for the motor. 
+        
+        @param enapin The chosen enable pin number controlled by the microcontroller corresponding 
+               to EN_A/OCD_A or EN_B/OCD_B on the L6206. 
+        
+        @param motorpin1 The first chosen motor pin on the CPU corresponding to the IN1 A/B pin 
+               on the L6206.
+        
+        @param motorpin2 The second chosen motor pin on the CPU corresponding to the IN2_A/B pin 
+               on the L6206.
+        
         """
 
         #set pin as an output for ENA/OCD and set as open-drain outputs with pullup resistors enabled
