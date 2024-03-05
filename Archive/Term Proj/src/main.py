@@ -137,18 +137,18 @@ def task3_fun():
             cp1 = pyb.Pin.board.PB6
             cp2 = pyb.Pin.board.PB7
             cptimer = 4
-            Kp_init = 0.05
+            trigger_Kp_init = 0.05
             setp_init = 16384
 
             #establish controller class
-            var2 = controller.P_Control(Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
+            var2 = controller.P_Control(trigger_Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
 
             #set the Kp value 
             Kp_init = 0.05
             
             #zero the encoder count and position
             var2.zero()
-            var2.set_Kp(Kp_init)
+            var2.set_Kp(trigger_Kp_init)
             timtimeint = utime.ticks_ms()
 
             #start the motor off as unmoving 
