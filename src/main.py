@@ -16,18 +16,19 @@ import task_share
 import controller
 import utime
 import mlx_cam
+import csv_reader
 
 #Initialize shared variables between tasks. 
-setpoint = 0
-shoot = False 
+stp = 0
+sht = False 
 
 
-def task1_fun(setpoint, shoot):
+def task1_fun(data):
     """!
     Task which runs the panning motion for motor #1. 
     @param 
     """
-    
+    setpoint, shoot = data
     t1_state = 0; 
     
     while True:
@@ -49,8 +50,10 @@ def task1_fun(setpoint, shoot):
             cptimer = 8
             Kp_init = 0.05
             setpoint = 16384
+            setp_init = 0       #   FIGURE OUT WHAT TO SET THIS TO FOR EACH MOTOR
 
-            #establish controller class
+            #establish controller object
+            global var
             var = controller.P_Control(Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
 
             #zero the encoder count and position
@@ -65,13 +68,14 @@ def task1_fun(setpoint, shoot):
         #S1 - MOVE     
         elif (t1_state == 1):
             # Run state one code
-            print("The state is ", t1_state)   
+            print("The state is ", t1_state)
+               
             var.run(setpoint, timtimeint)
             
             if shoot == True: 
                 t1_state = 2
             
-        #S2 - STOP TO SHOOT     
+        #S2 - IDLE TO SHOOT     
         elif (t1_state == 2):
             # Run state two code
             print("The state is ", t1_state)
@@ -87,12 +91,14 @@ def task1_fun(setpoint, shoot):
     
     #want target to be at zero (want the controller to force something to zero)
 
-def task2_fun():
+def task2_fun(data):
     """!
     Task which deals with the thermal camera. 
     @param 
     """
-    t2_state = 0 
+    t2_state = 0
+    setpoint, shoot = data
+    
     
     while True:
         # Implement FSM inside while loop
@@ -101,7 +107,7 @@ def task2_fun():
         if t2_state == 0:
             
             #Initialize camera object 
-            i2c_bus = I2C(1)
+            i2c_bus = mlx_cam.I2C(1)
 
             print("MXL90640 Easy(ish) Driver Test")
 
@@ -111,11 +117,71 @@ def task2_fun():
             print(f"I2C Scan: {scanhex}")
 
             # Create the camera object and set it up in default mode
-            camera = MLX_Cam(i2c_bus)
+            camera = mlx_cam.MLX_Cam(i2c_bus)
             
+            t2_state = 1
+
+            ##------------TEMPORARY-----------------
+            setpoint = 16384
+            shoot = False
+        
+        #S1 - GET CURRENT IMAGE     
+        elif t2_state == 1: 
+            
+            try:
+                # Get and image and see how long it takes to grab that image
+                print("Click.", end='')
+                begintime = utime.ticks_ms()
+                var.zero()
+                image = camera.get_image()
+                #print(f" {utime.ticks_diff(utime.ticks_ms(), begintime)} ms")
+                t2_state = 2 
+            except KeyboardInterrupt:
+                break
+            
+        #S2 - INTERPRET IMAGE 
+        elif t2_state == 2: 
+            
+            reed = csv_reader.CSV(camera.get_csv(image.v_ir, limits=(0, 99)))
+            reed.readdata()
+            col, total = reed.col_largest()
+            print(col,total)
     
-   
-def task3_fun():
+            t2_state = 3       
+            
+        #S3 - CALCULATE NEW SETPOINT 
+        elif t2_state == 3: 
+            done = False
+            # FOV = 55 degrees x 35 degrees
+            
+            # Gear Ratio = 6:1
+            # Our motors current position is the center of the frame, so column 16 
+            # If we want to make the col with the highest total heat value the new center of the frame 
+            # Then we have to calculate how many encoder ticks it takes to reach that position 
+            
+            #calculate how many degrees we need to move the turret
+            # 1 pixel = 1.72 degrees
+            # Resolution = 32 x 24 pixels
+            degs = (col-16)*1.72
+
+            #calculate how many encoder ticks it takes to move that distance
+            # Divide by 360 to get rid of degrees, multiply by 16384 to convert to encoder ticks, multiply 
+            # by 6 
+            setpoint = int(degs * 16384 / 360 * 6)
+            
+            if setpoint == 0: 
+                shoot = True
+                t2_state = 4 
+            
+        #S4 - IDLE FOR SHOOT  
+        elif t2_state == 4: 
+
+                if shoot == False: 
+                    t2_state = 1
+            
+        yield t2_state
+            
+def task3_fun(shoot):
     """!
     Task which runs the trigger motion for motor #2. 
     @param 
@@ -148,7 +214,7 @@ def task3_fun():
             
             #zero the encoder count and position
             var2.zero()
-            var2.set_Kp(trigger_Kp_init)
+            var2.set_Kp(Kp_init)
             timtimeint = utime.ticks_ms()
 
             #start the motor off as unmoving 
@@ -173,6 +239,7 @@ def task3_fun():
             var2.run(trigger_sp, timtimeint)
             if var2.run(trigger_sp, timtimeint) < 5: 
                 t3_state = 1
+            
                
         else:
             # If the state isnt 0, 1, or 2 we have an
@@ -190,20 +257,28 @@ if __name__ == "__main__":
           "Press Ctrl-C to stop and show diagnostics.")
  
     # Create a share and a queue to test function and diagnostic printouts
-    share0 = task_share.Share('h', thread_protect=False, name="Share 0")
-    q0 = task_share.Queue('L', 16, thread_protect=False, overwrite=False,
-                          name="Queue 0")
+    stp = task_share.Share('h', thread_protect=False, name="Shared Setpoint")
+    sht = task_share.Share('h', thread_protect=False, name="Shared Shoot")
+    
 
     # Create the tasks. If trace is enabled for any task, memory will be
     # allocated for state transition tracing, and the application will run out
     # of memory after a while and quit. Therefore, use tracing only for 
     # debugging and set trace to False when it's not needed
-    task1 = cotask.Task(task1_fun, name="Task_1", priority=1, period=10,
-                        profile=True, trace=False, shares=(share0, q0))
+    
+    #paning motor task
+    task1 = cotask.Task(task1_fun, name="Task_1", priority=2, period=10,
+                        profile=True, trace=False, shares=(stp, sht))
+    
+    #camera task
     task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=10,
-                        profile=True, trace=False, shares=(share0, q0))
-    task3 = cotask.Task(task3_fun, name="Task_3", priority=3, period=100,
-                       profile=True, trace=False)
+                        profile=True, trace=False, shares=(stp, sht))
+    
+    #trigger motor task 
+    task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=10,
+                       profile=True, trace=False, shares=(stp, sht))
+    
+    #put all of the tasks on the task list 
     cotask.task_list.append(task1)
     cotask.task_list.append(task2)
     cotask.task_list.append(task3)

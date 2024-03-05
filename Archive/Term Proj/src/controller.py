@@ -98,7 +98,8 @@ class P_Control():
         encout = self.enco1.read()
         self.times.append(utime.ticks_diff(utime.ticks_ms(), z_ticks))
         self.position.append(encout)
-        PWM = self.Kp * (self.setpoint - encout) 
+        #PWM = self.Kp * (self.setpoint - encout) 
+        PWM = self.Kp * (self.setpoint) 
         if PWM > 100:
             PWM = 100
         elif PWM < -100:
