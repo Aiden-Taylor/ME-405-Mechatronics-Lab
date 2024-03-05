@@ -38,7 +38,7 @@ def task1_fun(data):
         #Initialize motor pins, Kp value, and position 
         if (t1_state == 0):
             # Run state zero code
-            print("The state is ", t1_state)
+            print("Task 1 state: ", t1_state)
             ena = pyb.Pin.board.PC1
             in1 = pyb.Pin.board.PA0
             in2 = pyb.Pin.board.PA1
@@ -68,7 +68,7 @@ def task1_fun(data):
         #S1 - MOVE     
         elif (t1_state == 1):
             # Run state one code
-            print("The state is ", t1_state)
+            print("Task 1 state: ", t1_state)
                
             var.run(setpoint, timtimeint)
             
@@ -78,7 +78,7 @@ def task1_fun(data):
         #S2 - IDLE TO SHOOT     
         elif (t1_state == 2):
             # Run state two code
-            print("The state is ", t1_state)
+            print("Task 1 state: ", t1_state)
             var.moe.set_duty_cycle(0)
     
         else:
@@ -105,7 +105,7 @@ def task2_fun(data):
         
         #S0 - CAMERA INIT 
         if t2_state == 0:
-            
+            print("Task 2 state: ", t2_state)
             #Initialize camera object 
             i2c_bus = mlx_cam.I2C(1)
 
@@ -117,32 +117,39 @@ def task2_fun(data):
             print(f"I2C Scan: {scanhex}")
 
             # Create the camera object and set it up in default mode
+            gc.collect()
             camera = mlx_cam.MLX_Cam(i2c_bus)
+            print(f"Current refresh rate: {camera._camera.refresh_rate}")
+            camera._camera.refresh_rate = 10.0
+            print(f"Refresh rate is now:  {camera._camera.refresh_rate}")
+            image = None
+            gc.collect()
             
             t2_state = 1
-
-            ##------------TEMPORARY-----------------
-            setpoint = 16384
+            setpoint = 0
             shoot = False
         
         #S1 - GET CURRENT IMAGE     
         elif t2_state == 1: 
-            
+            print("Task 2 state: ", t2_state)
             try:
                 # Get and image and see how long it takes to grab that image
                 print("Click.", end='')
                 begintime = utime.ticks_ms()
                 var.zero()
+                #while not image:
+                #    image = camera.get_image_nonblocking()
+                #    yield t2_state
                 image = camera.get_image()
-                #print(f" {utime.ticks_diff(utime.ticks_ms(), begintime)} ms")
-                t2_state = 2 
+                t2_state = 2
+                
             except KeyboardInterrupt:
                 break
             
         #S2 - INTERPRET IMAGE 
         elif t2_state == 2: 
-            
-            reed = csv_reader.CSV(camera.get_csv(image.v_ir, limits=(0, 99)))
+            print("Task 2 state: ", t2_state)
+            reed = csv_reader.CSV(camera.get_csv(image, limits=(0, 99)))
             reed.readdata()
             col, total = reed.col_largest()
             print(col,total)
@@ -151,7 +158,7 @@ def task2_fun(data):
             
         #S3 - CALCULATE NEW SETPOINT 
         elif t2_state == 3: 
-            done = False
+            print("Task 2 state: ", t2_state)
             # FOV = 55 degrees x 35 degrees
             
             # Gear Ratio = 6:1
@@ -175,9 +182,9 @@ def task2_fun(data):
             
         #S4 - IDLE FOR SHOOT  
         elif t2_state == 4: 
-
-                if shoot == False: 
-                    t2_state = 1
+            print("Task 2 state: ", t2_state)
+            if shoot == False: 
+                t2_state = 1
             
         yield t2_state
             
@@ -194,6 +201,7 @@ def task3_fun(shoot):
         #S0 - MOTOR INIT 
         #Initialize motor pins, Kp value, and position 
         if (t3_state == 0):
+            print("Task 3 state: ", t3_state)
             ena = pyb.Pin.board.PA10
             in1 = pyb.Pin.board.PB4
             in2 = pyb.Pin.board.PB5
@@ -225,7 +233,7 @@ def task3_fun(shoot):
             
         #S1 - WAIT 
         elif (t3_state == 1):
-            
+            print("Task 3 state: ", t3_state)
             var2.moe.set_duty_cycle(0)
             
             if shoot == True: 
@@ -233,12 +241,13 @@ def task3_fun(shoot):
                 
         #S2 - SHOOT 
         elif (t3_state == 2): 
-            
+            print("Task 3 state: ", t3_state)
             #CHANGE THIS VALUE 
             trigger_sp = 16384  
             var2.run(trigger_sp, timtimeint)
             if var2.run(trigger_sp, timtimeint) < 5: 
                 t3_state = 1
+                shoot = False 
             
                
         else:
@@ -291,6 +300,7 @@ if __name__ == "__main__":
     # Run the scheduler with the chosen scheduling algorithm. Quit if ^C pressed
     t0 = utime.ticks_ms()
     while True:
+        gc.collect()
         try:
             cotask.task_list.pri_sched()
             if (utime.ticks_ms()-t0) > 1000:

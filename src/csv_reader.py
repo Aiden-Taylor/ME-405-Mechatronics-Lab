@@ -7,8 +7,6 @@
   
   """
 
-import csv
-
 class CSV:
     
     def __init__ (self, data_input):
@@ -24,14 +22,15 @@ class CSV:
         """! 
         This function loops through all of the rows and cols of 
         """
-    
+
         self.cols = [0]*32
-        snap = csv.reader(self.data, delimiter=' ', quotechar='|')
-        for row in snap:
-            row = row[0].split(',')
+        
+        for row in self.data:
+            row = row.split(',')
+            #print(row)
             for lines in range(len(row)):
                 self.cols[lines] += int(row[lines])
-            
+                
         return(self.cols)
 
     def col_largest(self):
