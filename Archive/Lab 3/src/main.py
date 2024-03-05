@@ -38,7 +38,8 @@ while step_test:
     #one revolution and stop it at the final position.
     #Note:16,384 encoder ticks per revolution
 
-    Kp_init = float(input("Input a Kp: "))
+    #Kp_init = float(input("Input a Kp: "))
+    Kp_init = 0.05
 
     #zero the encoder count and position
     var.zero()
