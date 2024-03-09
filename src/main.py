@@ -30,6 +30,7 @@ def task1_fun(data):
     """
     setpoint, shoot = data
     t1_state = 0; 
+    print("Starting task 1")
     
     while True:
         # Implement FSM inside while loop
@@ -39,6 +40,7 @@ def task1_fun(data):
         if (t1_state == 0):
             # Run state zero code
             print("Task 1 state: ", t1_state)
+            print("Initializing panning motor and encoder")
             ena = pyb.Pin.board.PC1
             in1 = pyb.Pin.board.PA0
             in2 = pyb.Pin.board.PA1
@@ -69,16 +71,19 @@ def task1_fun(data):
         elif (t1_state == 1):
             # Run state one code
             print("Task 1 state: ", t1_state)
-               
+            print("updating motor setpoint")
+        
             var.run(setpoint, timtimeint)
             
             if shoot == True: 
+                print("Time to shoot")
                 t1_state = 2
             
         #S2 - IDLE TO SHOOT     
         elif (t1_state == 2):
             # Run state two code
             print("Task 1 state: ", t1_state)
+            print("Panning motor idling to shoot")
             var.moe.set_duty_cycle(0)
     
         else:
@@ -86,6 +91,7 @@ def task1_fun(data):
             # invalid state
             raise ValueError('Invalid state')
             
+        print("Exiting task 1")
         yield t1_state
     
     
@@ -98,6 +104,7 @@ def task2_fun(data):
     """
     t2_state = 0
     setpoint, shoot = data
+    print("Starting task 2")
     
     
     while True:
@@ -106,15 +113,16 @@ def task2_fun(data):
         #S0 - CAMERA INIT 
         if t2_state == 0:
             print("Task 2 state: ", t2_state)
+            print("Initializing thermal camera")
             #Initialize camera object 
             i2c_bus = mlx_cam.I2C(1)
 
-            print("MXL90640 Easy(ish) Driver Test")
+            #print("MXL90640 Easy(ish) Driver Test")
 
             # Select MLX90640 camera I2C address, normally 0x33, and check the bus
             i2c_address = 0x33
             scanhex = [f"0x{addr:X}" for addr in i2c_bus.scan()]
-            print(f"I2C Scan: {scanhex}")
+            #print(f"I2C Scan: {scanhex}")
 
             # Create the camera object and set it up in default mode
             gc.collect()
@@ -132,6 +140,7 @@ def task2_fun(data):
         #S1 - GET CURRENT IMAGE     
         elif t2_state == 1: 
             print("Task 2 state: ", t2_state)
+            print("Getting current image")
             try:
                 # Get and image and see how long it takes to grab that image
                 print("Click.", end='')
@@ -149,6 +158,7 @@ def task2_fun(data):
         #S2 - INTERPRET IMAGE 
         elif t2_state == 2: 
             print("Task 2 state: ", t2_state)
+            print("Interpreting image")
             reed = csv_reader.CSV(camera.get_csv(image, limits=(0, 99)))
             reed.readdata()
             col, total = reed.col_largest()
@@ -159,6 +169,7 @@ def task2_fun(data):
         #S3 - CALCULATE NEW SETPOINT 
         elif t2_state == 3: 
             print("Task 2 state: ", t2_state)
+            print("Calculating new setpoint")
             # FOV = 55 degrees x 35 degrees
             
             # Gear Ratio = 6:1
@@ -175,17 +186,20 @@ def task2_fun(data):
             # Divide by 360 to get rid of degrees, multiply by 16384 to convert to encoder ticks, multiply 
             # by 6 
             setpoint = int(degs * 16384 / 360 * 6)
+            print("The new setpoint is",setpoint)
             
             if setpoint == 0: 
+                print("Time to shoot!")
                 shoot = True
                 t2_state = 4 
             
         #S4 - IDLE FOR SHOOT  
         elif t2_state == 4: 
             print("Task 2 state: ", t2_state)
+            print("Camera Idling to shoot")
             if shoot == False: 
                 t2_state = 1
-            
+        print("Exiting task 2")    
         yield t2_state
             
 def task3_fun(shoot):
@@ -194,6 +208,7 @@ def task3_fun(shoot):
     @param 
     """
     t3_state = 0; 
+    print("Task 3")
 
     while True:
         # Implement FSM inside while loop
@@ -202,6 +217,7 @@ def task3_fun(shoot):
         #Initialize motor pins, Kp value, and position 
         if (t3_state == 0):
             print("Task 3 state: ", t3_state)
+            print("Initializing trigger motor and encoder")
             ena = pyb.Pin.board.PA10
             in1 = pyb.Pin.board.PB4
             in2 = pyb.Pin.board.PB5
@@ -234,6 +250,7 @@ def task3_fun(shoot):
         #S1 - WAIT 
         elif (t3_state == 1):
             print("Task 3 state: ", t3_state)
+            print("Trigger motor waiting to shoot")
             var2.moe.set_duty_cycle(0)
             
             if shoot == True: 
@@ -242,10 +259,13 @@ def task3_fun(shoot):
         #S2 - SHOOT 
         elif (t3_state == 2): 
             print("Task 3 state: ", t3_state)
+            print("Time to shoot!")
             #CHANGE THIS VALUE 
             trigger_sp = 16384  
             var2.run(trigger_sp, timtimeint)
             if var2.run(trigger_sp, timtimeint) < 5: 
+                #turn off trigger motor 
+                #return the trigger motor to initial state? 
                 t3_state = 1
                 shoot = False 
             
@@ -254,7 +274,8 @@ def task3_fun(shoot):
             # If the state isnt 0, 1, or 2 we have an
             # invalid state
             raise ValueError('Invalid state')
-            
+        
+        print("Exiting task 3")      
         yield t3_state  
            
 
@@ -262,10 +283,11 @@ def task3_fun(shoot):
 #-------------------------------------------------------------------------------------------------------  
 
 if __name__ == "__main__":
-    print("Testing ME405 stuff in cotask.py and task_share.py\r\n"
-          "Press Ctrl-C to stop and show diagnostics.")
+    #print("Testing ME405 stuff in cotask.py and task_share.py\r\n"
+          #"Press Ctrl-C to stop and show diagnostics.")
  
     # Create a share and a queue to test function and diagnostic printouts
+    print("Creating shared queues")
     stp = task_share.Share('h', thread_protect=False, name="Shared Setpoint")
     sht = task_share.Share('h', thread_protect=False, name="Shared Shoot")
     
@@ -275,6 +297,7 @@ if __name__ == "__main__":
     # of memory after a while and quit. Therefore, use tracing only for 
     # debugging and set trace to False when it's not needed
     
+    print("Creating task list")
     #paning motor task
     task1 = cotask.Task(task1_fun, name="Task_1", priority=2, period=10,
                         profile=True, trace=False, shares=(stp, sht))
@@ -298,6 +321,7 @@ if __name__ == "__main__":
     gc.collect()
 
     # Run the scheduler with the chosen scheduling algorithm. Quit if ^C pressed
+    print("Running the scheduler")
     t0 = utime.ticks_ms()
     while True:
         gc.collect()
