@@ -331,6 +331,7 @@ if __name__ == "__main__":
                 raise KeyboardInterrupt
         except KeyboardInterrupt:
             break
+        
 
     # Print a table of task data and a table of shared information data
     #print('\n' + str (cotask.task_list))
