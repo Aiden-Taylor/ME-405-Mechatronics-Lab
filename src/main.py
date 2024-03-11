@@ -6,6 +6,8 @@
 @author Aiden Taylor, Jack Foxcroft, Julia Fay
 @date   2024-Mar-04 
 
+note: the encoder reader file was changed and doxygen comments there need to be updated 
+
 """
 
 #import all relevant modlues and files 
@@ -65,20 +67,28 @@ def task1_fun(data):
             var.zero()
             var.set_Kp(Kp_init)
             timtimeint = utime.ticks_ms()
-            
             var.moe.set_duty_cycle(0)
-                    
-            t1_state = 1
-        
+
+            #always go to state 1 from init  
+            t1_state = 1   
+
+
         #S1 - GET INTO POSITION     
         elif (t1_state == 1):
             
-            one_eighty =  16384 * 6
-            var.run(one_eighty, timtimeint)
-            if var.run(one_eighty, timtimeint) < 5: 
+            #create the 180 degree setpoint (16384 encoder counts per rev, w/ a gear ratio of 6:1 we need 3*
+            one_eighty = 3*16384
+            #get current clock count 
+            timtimeint = utime.ticks_ms()
+            var.run(one_eighty,timtimeint)
+            print("Task 1 state: ", t1_state)
+            if abs(var.get_PWM()) < 10:
                 #turn off trigger motor 
-                var.run(0,timtimeint)
+                print("I moved 180!")
+                var.moe.set_duty_cycle(0) 
+                #utime.sleep(2)
                 t1_state = 2
+                var.zero()
         
         #S2 - MOVE     
         elif (t1_state == 2):
@@ -86,7 +96,7 @@ def task1_fun(data):
             setpoint = setpoint_share.get()  # Get setpoint from shared variable
             print("Task 1 state: ", t1_state)
             print(f"updating motor setpoint to: {setpoint}")
-            utime.sleep(2)
+            #utime.sleep(2)
         
             var.run(setpoint, timtimeint)
             
@@ -99,7 +109,7 @@ def task1_fun(data):
             # Run state two code
             print("Task 1 state: ", t1_state)
             print("Panning motor idling to shoot")
-            utime.sleep(2)
+            #utime.sleep(2)
             var.moe.set_duty_cycle(0)
     
         else:
@@ -108,7 +118,7 @@ def task1_fun(data):
             raise ValueError('Invalid state')
             
         print("Exiting task 1")
-        yield t1_state
+        yield 0
     
     
     #want target to be at zero (want the controller to force something to zero)
@@ -133,7 +143,7 @@ def task2_fun(data):
         if t2_state == 0:
             print("Task 2 state: ", t2_state)
             print("Initializing thermal camera")
-            utime.sleep(2)
+            #utime.sleep(2)
             #Initialize camera object 
             i2c_bus = mlx_cam.I2C(1)
 
@@ -162,7 +172,7 @@ def task2_fun(data):
         elif t2_state == 1: 
             print("Task 2 state: ", t2_state)
             print("Getting current image")
-            utime.sleep(2)
+            #utime.sleep(2)
             try:
                 # Get and image and see how long it takes to grab that image
                 print("Click.", end='')
@@ -181,7 +191,7 @@ def task2_fun(data):
         elif t2_state == 2: 
             print("Task 2 state: ", t2_state)
             print("Interpreting image")
-            utime.sleep(2)
+            #utime.sleep(2)
             reed = csv_reader.CSV(camera.get_csv(image, limits=(0, 99)))
             reed.readdata()
             col, total = reed.col_largest()
@@ -193,7 +203,7 @@ def task2_fun(data):
         elif t2_state == 3: 
             print("Task 2 state: ", t2_state)
             print("Calculating new setpoint")
-            utime.sleep(2)
+            #utime.sleep(2)
             # FOV = 55 degrees x 35 degrees
             
             # Gear Ratio = 6:1
@@ -229,11 +239,11 @@ def task2_fun(data):
         elif t2_state == 4: 
             print("Task 2 state: ", t2_state)
             print("Camera Idling to shoot")
-            utime.sleep(2)
+            #utime.sleep(2)
             if shoot == False: 
                 t2_state = 1
         print("Exiting task 2")    
-        yield t2_state
+        yield 0
             
 def task3_fun(data):
     """!
@@ -256,7 +266,7 @@ def task3_fun(data):
         if (t3_state == 0):
             print("Task 3 state: ", t3_state)
             print("Initializing trigger motor and encoder")
-            utime.sleep(2)
+            #utime.sleep(2)
             ena = pyb.Pin.board.PA10
             in1 = pyb.Pin.board.PB4
             in2 = pyb.Pin.board.PB5
@@ -290,7 +300,7 @@ def task3_fun(data):
         elif (t3_state == 1):
             print("Task 3 state: ", t3_state)
             print("Trigger motor waiting to shoot")
-            utime.sleep(2)
+            #utime.sleep(2)
             var2.moe.set_duty_cycle(0)
             
             if shoot == True: 
@@ -300,7 +310,7 @@ def task3_fun(data):
         elif (t3_state == 2): 
             print("Task 3 state: ", t3_state)
             print("Time to shoot!")
-            utime.sleep(2)
+            #utime.sleep(2)
             #CHANGE THIS VALUE 
             trigger_sp = 16384  
             var2.run(trigger_sp, timtimeint)
@@ -319,7 +329,8 @@ def task3_fun(data):
             raise ValueError('Invalid state')
         
         print("Exiting task 3")      
-        yield t3_state  
+        yield 0
+          
            
 
 
@@ -347,11 +358,11 @@ if __name__ == "__main__":
                         profile=True, trace=False, shares=(stp, sht))
     
     #camera task
-    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=10,
+    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=100,
                         profile=True, trace=False, shares=(stp, sht))
     
     #trigger motor task 
-    task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=10,
+    task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=100,
                        profile=True, trace=False, shares=(stp, sht))
     
     #put all of the tasks on the task list 
@@ -377,7 +388,7 @@ if __name__ == "__main__":
                 raise KeyboardInterrupt        
         
         except KeyboardInterrupt:
-            var.run(0,0)
+            var.moe.set_duty_cycle(0)
             break
         
 

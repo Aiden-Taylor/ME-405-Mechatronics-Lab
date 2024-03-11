@@ -95,17 +95,22 @@ class P_Control():
             @return The PWM signal calcuated by the P control loop is returned. 
             """  
         self.setpoint = in_setpoint 
-        encout = self.enco1.read()
+        encout = self.enco1.readtim()
         self.times.append(utime.ticks_diff(utime.ticks_ms(), z_ticks))
         self.position.append(encout)
-        PWM = self.Kp * (self.setpoint - encout) 
-        if PWM > 100:
-            PWM = 100
-        elif PWM < -100:
-            PWM = -100   
-        self.moe.set_duty_cycle(PWM)
-        return(PWM)
+        self.PWM = self.Kp * (self.setpoint - encout) 
+        if self.PWM > 100:
+            self.PWM = 100
+        elif self.PWM < -100:
+            self.PWM = -100   
+        self.moe.set_duty_cycle(self.PWM)
+        return(self.PWM)
         
+
+    def get_PWM(self):
+        return(self.PWM)
+    
+
     def set_setpoint(self,in_sp):
         """!
             The set_setpoint function in the P_Control class sets the setpoint of the motor 

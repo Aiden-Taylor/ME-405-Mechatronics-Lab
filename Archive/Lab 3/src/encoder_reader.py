@@ -45,12 +45,16 @@ class Encoder:
         self.ch1 = self.tim.channel(1, mode=pyb.Timer.ENC_AB, pin=pin1)
         self.ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
 
+    def readtim(self):
+
+        return(self.tim.counter())
+    
     def read(self):
         """!
         The read function in the Encoder class returns the current timer counter value.
         """
         #read the encoder
-        return(self.tim.counter())
+        return(self.loop())
 
     def zero(self):
         """!
@@ -72,7 +76,7 @@ class Encoder:
         #256 slits
         #4 edges per slit
         #16 for gear ratio
-        self.curr_pos = self.read()*360/(256*4*16)
+        self.curr_pos = self.readtim()*360/(256*4*16)
         self.delt = self.curr_pos-self.prev_pos
         if self.delt >= 1000:
             self.delt -= 1440

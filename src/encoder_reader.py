@@ -24,12 +24,6 @@ class Encoder:
         """!
         The initialization function inside the Encoder class sets up the pins for timer channels, 
         the timer, and the two channels needed to read AB encoder quadrature output. 
-        
-        @param pin1 The encoder pin on the L6206 corresponding to channel A for the encoder. 
-        
-        @param pin2 The encoder pin on the L6206 corresponding to channel B for the encoder. 
-        
-        @param timer The timer chanel corresponding to the selected encoder pins.  
         """
         #put some stuff here
 
@@ -51,14 +45,16 @@ class Encoder:
         self.ch1 = self.tim.channel(1, mode=pyb.Timer.ENC_AB, pin=pin1)
         self.ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
 
+    def readtim(self):
+
+        return(self.tim.counter())
+    
     def read(self):
         """!
         The read function in the Encoder class returns the current timer counter value.
-        
-        @return The current timer counter value is returned. 
         """
         #read the encoder
-        return(self.tim.counter())
+        return(self.loop())
 
     def zero(self):
         """!
@@ -75,14 +71,12 @@ class Encoder:
     def loop(self):
         """!
         The loop function in the Encoder class calculated the correct delta in motor postition in degrees from the timer counter.
-        
-        @return The current motor position in degrees is returned. 
         """
         #256*4*16 encoder ticks per rotation
         #256 slits
         #4 edges per slit
         #16 for gear ratio
-        self.curr_pos = self.read()*360/(256*4*16)
+        self.curr_pos = self.readtim()*360/(256*4*16)
         self.delt = self.curr_pos-self.prev_pos
         if self.delt >= 1000:
             self.delt -= 1440
