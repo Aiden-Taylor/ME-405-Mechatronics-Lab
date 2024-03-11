@@ -35,9 +35,6 @@ def task1_fun(data):
     
     while True:
         
-        setpoint = setpoint_share.get()  # Get setpoint from shared variable
-        shoot = shoot_share.get()  # Get shoot flag from shared variable
-        
         # Implement FSM inside while loop
         #S0 - MOTOR INIT 
         #Initialize motor pins, Kp value, and position 
@@ -92,28 +89,37 @@ def task1_fun(data):
         
         #S2 - MOVE     
         elif (t1_state == 2):
-            # Run state one code
+            
+            #im thinking we need to add one more shared variable so we can give the panning 
+            #motor some time to reach its new setpoint before it starts going to a new setpoint 
+            #like we hold off on getting a new image and recalculating a new setpoint until 
+            #the panning motor has reached within a certain value of its last setpoint 
+            
+            #get the setpoint from the share
             setpoint = setpoint_share.get()  # Get setpoint from shared variable
             print("Task 1 state: ", t1_state)
             print(f"updating motor setpoint to: {setpoint}")
-            #utime.sleep(2)
-        
+            #update the motors setpoint 
             var.run(setpoint, timtimeint)
-            
+           
+            shoot = shoot_share.get()  # Get shoot flag from shared variable
+              
             if shoot == True: 
                 print("Time to shoot")
                 t1_state = 3
             
         #S3 - IDLE TO SHOOT     
         elif (t1_state == 3):
-            # Run state two code
             print("Task 1 state: ", t1_state)
             print("Panning motor idling to shoot")
-            #utime.sleep(2)
+            #set duty cycle to 0 to stop the motor 
             var.moe.set_duty_cycle(0)
+            #if the trigger has shot its shot, return back to state 2 
+            if shoot == False: 
+                t1_state = 2
     
         else:
-            # If the state isnt 0, 1, or 2 we have an
+            # If the state isnt 0, 1, 2, or 3 we have an
             # invalid state
             raise ValueError('Invalid state')
             
@@ -131,13 +137,9 @@ def task2_fun(data):
     t2_state = 0
     setpoint_share, shoot_share = data  # Access shared variables from data tuple
     print("Starting task 2")
-    
-    
-    while True:
-        
-        setpoint = setpoint_share.get()  # Get setpoint from shared variable
-        shoot = shoot_share.get()  # Get shoot flag from shared variable
        
+    while True:
+
         # Implement FSM inside while loop
         #S0 - CAMERA INIT 
         if t2_state == 0:
@@ -235,6 +237,8 @@ def task2_fun(data):
                 shoot_share.put(shoot)
                 t2_state = 4 
             
+            #if its not time to shoot, keep putting shoot = False into the queue 
+            shoot_share.put(shoot)
         #S4 - IDLE FOR SHOOT  
         elif t2_state == 4: 
             print("Task 2 state: ", t2_state)
@@ -256,9 +260,6 @@ def task3_fun(data):
     setpoint_share, shoot_share = data  # Access shared variables from data tuple
 
     while True:
-        
-        setpoint = setpoint_share.get()  # Get setpoint from shared variable 
-        shoot = shoot_share.get()  # Get shoot flag from shared variable
         
         # Implement FSM inside while loop
         #S0 - MOTOR INIT 
@@ -303,20 +304,30 @@ def task3_fun(data):
             #utime.sleep(2)
             var2.moe.set_duty_cycle(0)
             
+            shoot = shoot_share.get()  # Get shoot flag from shared variable
+            
             if shoot == True: 
                 t3_state = 2 
+                shoot_share.put(shoot) # Put shoot back in so that Task 1 can get it 
+                
+            shoot_share.put(shoot) # Put shoot back in so that Task 1 can get it 
                 
         #S2 - SHOOT 
         elif (t3_state == 2): 
             print("Task 3 state: ", t3_state)
             print("Time to shoot!")
-            #utime.sleep(2)
-            #CHANGE THIS VALUE 
-            trigger_sp = 16384  
+            
+            #create the setpoint such that the trigger moves the corrent distance 
+            #estimate to be half a revolution   
+            trigger_sp = 16384/2   
+            #get current clock count 
+            timtimeint = utime.ticks_ms()
+            #run the motor 
             var2.run(trigger_sp, timtimeint)
-            if var2.run(trigger_sp, timtimeint) < 5: 
+            #if the motor has a low PWM value, assume it has reached its position 
+            if abs(var2.get_PWM()) < 10: 
                 #turn off trigger motor 
-                #return the trigger motor to initial state? 
+                var2.moe.set_duty_cycle(0)
                 t3_state = 1
                 shoot = False 
                 shoot_share.put(shoot)
