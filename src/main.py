@@ -18,29 +18,32 @@ import utime
 import mlx_cam
 import csv_reader
 
-#Initialize shared variables between tasks. 
-stp = 0
-sht = False 
-
+#create global variable done 
+done = False 
 
 def task1_fun(data):
     """!
     Task which runs the panning motion for motor #1. 
     @param 
     """
-    setpoint, shoot = data
+    setpoint_share, shoot_share = data  # Access shared variables from data tuple
     t1_state = 0; 
+    
     print("Starting task 1")
     
     while True:
-        # Implement FSM inside while loop
         
+        setpoint = setpoint_share.get()  # Get setpoint from shared variable
+        shoot = shoot_share.get()  # Get shoot flag from shared variable
+        
+        # Implement FSM inside while loop
         #S0 - MOTOR INIT 
         #Initialize motor pins, Kp value, and position 
         if (t1_state == 0):
             # Run state zero code
             print("Task 1 state: ", t1_state)
             print("Initializing panning motor and encoder")
+            utime.sleep(2)
             ena = pyb.Pin.board.PC1
             in1 = pyb.Pin.board.PA0
             in2 = pyb.Pin.board.PA1
@@ -51,7 +54,7 @@ def task1_fun(data):
             cp2 = pyb.Pin.board.PC7
             cptimer = 8
             Kp_init = 0.05
-            setpoint = 16384
+            setpoint = 0
             setp_init = 0       #   FIGURE OUT WHAT TO SET THIS TO FOR EACH MOTOR
 
             #establish controller object
@@ -67,23 +70,36 @@ def task1_fun(data):
                     
             t1_state = 1
         
-        #S1 - MOVE     
+        #S1 - GET INTO POSITION     
         elif (t1_state == 1):
+            
+            one_eighty =  16384 * 6
+            var.run(one_eighty, timtimeint)
+            if var.run(one_eighty, timtimeint) < 5: 
+                #turn off trigger motor 
+                var.run(0,timtimeint)
+                t1_state = 2
+        
+        #S2 - MOVE     
+        elif (t1_state == 2):
             # Run state one code
+            setpoint = setpoint_share.get()  # Get setpoint from shared variable
             print("Task 1 state: ", t1_state)
-            print("updating motor setpoint")
+            print(f"updating motor setpoint to: {setpoint}")
+            utime.sleep(2)
         
             var.run(setpoint, timtimeint)
             
             if shoot == True: 
                 print("Time to shoot")
-                t1_state = 2
+                t1_state = 3
             
-        #S2 - IDLE TO SHOOT     
-        elif (t1_state == 2):
+        #S3 - IDLE TO SHOOT     
+        elif (t1_state == 3):
             # Run state two code
             print("Task 1 state: ", t1_state)
             print("Panning motor idling to shoot")
+            utime.sleep(2)
             var.moe.set_duty_cycle(0)
     
         else:
@@ -103,17 +119,21 @@ def task2_fun(data):
     @param 
     """
     t2_state = 0
-    setpoint, shoot = data
+    setpoint_share, shoot_share = data  # Access shared variables from data tuple
     print("Starting task 2")
     
     
     while True:
-        # Implement FSM inside while loop
         
+        setpoint = setpoint_share.get()  # Get setpoint from shared variable
+        shoot = shoot_share.get()  # Get shoot flag from shared variable
+       
+        # Implement FSM inside while loop
         #S0 - CAMERA INIT 
         if t2_state == 0:
             print("Task 2 state: ", t2_state)
             print("Initializing thermal camera")
+            utime.sleep(2)
             #Initialize camera object 
             i2c_bus = mlx_cam.I2C(1)
 
@@ -130,6 +150,7 @@ def task2_fun(data):
             print(f"Current refresh rate: {camera._camera.refresh_rate}")
             camera._camera.refresh_rate = 10.0
             print(f"Refresh rate is now:  {camera._camera.refresh_rate}")
+            utime.sleep(2)
             image = None
             gc.collect()
             
@@ -141,6 +162,7 @@ def task2_fun(data):
         elif t2_state == 1: 
             print("Task 2 state: ", t2_state)
             print("Getting current image")
+            utime.sleep(2)
             try:
                 # Get and image and see how long it takes to grab that image
                 print("Click.", end='')
@@ -159,10 +181,11 @@ def task2_fun(data):
         elif t2_state == 2: 
             print("Task 2 state: ", t2_state)
             print("Interpreting image")
+            utime.sleep(2)
             reed = csv_reader.CSV(camera.get_csv(image, limits=(0, 99)))
             reed.readdata()
             col, total = reed.col_largest()
-            print(col,total)
+            print("COLLUMN", col,"TOTAL", total)
     
             t2_state = 3       
             
@@ -170,6 +193,7 @@ def task2_fun(data):
         elif t2_state == 3: 
             print("Task 2 state: ", t2_state)
             print("Calculating new setpoint")
+            utime.sleep(2)
             # FOV = 55 degrees x 35 degrees
             
             # Gear Ratio = 6:1
@@ -184,40 +208,55 @@ def task2_fun(data):
 
             #calculate how many encoder ticks it takes to move that distance
             # Divide by 360 to get rid of degrees, multiply by 16384 to convert to encoder ticks, multiply 
-            # by 6 
-            setpoint = int(degs * 16384 / 360 * 6)
-            print("The new setpoint is",setpoint)
+            # by 6 to account for the gear ratio 
+            new_setpoint = int((degs/360) * 16384 * 6)
+            print("The new setpoint is", new_setpoint)
+            #update the shares value 
+            setpoint_share.put(new_setpoint)
+            print(setpoint_share)
             
-            if setpoint == 0: 
+            #default to going back to state 1 to get an image
+            t2_state = 1
+            
+            #if the new setpoint is 0 then its time to shoot 
+            if new_setpoint == 0: 
                 print("Time to shoot!")
                 shoot = True
+                shoot_share.put(shoot)
                 t2_state = 4 
             
         #S4 - IDLE FOR SHOOT  
         elif t2_state == 4: 
             print("Task 2 state: ", t2_state)
             print("Camera Idling to shoot")
+            utime.sleep(2)
             if shoot == False: 
                 t2_state = 1
         print("Exiting task 2")    
         yield t2_state
             
-def task3_fun(shoot):
+def task3_fun(data):
     """!
     Task which runs the trigger motion for motor #2. 
     @param 
     """
     t3_state = 0; 
     print("Task 3")
+    
+    setpoint_share, shoot_share = data  # Access shared variables from data tuple
 
     while True:
-        # Implement FSM inside while loop
         
+        setpoint = setpoint_share.get()  # Get setpoint from shared variable 
+        shoot = shoot_share.get()  # Get shoot flag from shared variable
+        
+        # Implement FSM inside while loop
         #S0 - MOTOR INIT 
         #Initialize motor pins, Kp value, and position 
         if (t3_state == 0):
             print("Task 3 state: ", t3_state)
             print("Initializing trigger motor and encoder")
+            utime.sleep(2)
             ena = pyb.Pin.board.PA10
             in1 = pyb.Pin.board.PB4
             in2 = pyb.Pin.board.PB5
@@ -251,6 +290,7 @@ def task3_fun(shoot):
         elif (t3_state == 1):
             print("Task 3 state: ", t3_state)
             print("Trigger motor waiting to shoot")
+            utime.sleep(2)
             var2.moe.set_duty_cycle(0)
             
             if shoot == True: 
@@ -260,6 +300,7 @@ def task3_fun(shoot):
         elif (t3_state == 2): 
             print("Task 3 state: ", t3_state)
             print("Time to shoot!")
+            utime.sleep(2)
             #CHANGE THIS VALUE 
             trigger_sp = 16384  
             var2.run(trigger_sp, timtimeint)
@@ -268,6 +309,8 @@ def task3_fun(shoot):
                 #return the trigger motor to initial state? 
                 t3_state = 1
                 shoot = False 
+                shoot_share.put(shoot)
+                done = True
             
                
         else:
@@ -285,6 +328,7 @@ def task3_fun(shoot):
 if __name__ == "__main__":
     #print("Testing ME405 stuff in cotask.py and task_share.py\r\n"
           #"Press Ctrl-C to stop and show diagnostics.")
+    
  
     # Create a share and a queue to test function and diagnostic printouts
     print("Creating shared queues")
@@ -327,9 +371,13 @@ if __name__ == "__main__":
         gc.collect()
         try:
             cotask.task_list.pri_sched()
-            if (utime.ticks_ms()-t0) > 1000:
+            if (utime.ticks_ms()-t0) > 100000: #change this to be the hardware stop 
                 raise KeyboardInterrupt
+            elif done == True: 
+                raise KeyboardInterrupt        
+        
         except KeyboardInterrupt:
+            var.run(0,0)
             break
         
 
