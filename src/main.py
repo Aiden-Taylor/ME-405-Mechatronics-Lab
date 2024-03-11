@@ -28,7 +28,7 @@ def task1_fun(data):
     Task which runs the panning motion for motor #1. 
     @param 
     """
-    setpoint_share, shoot_share = data  # Access shared variables from data tuple
+    setpoint_share, shoot_share, wait_share = data  # Access shared variables from data tuple
     t1_state = 0; 
     
     print("Starting task 1")
@@ -65,6 +65,7 @@ def task1_fun(data):
             var.set_Kp(Kp_init)
             timtimeint = utime.ticks_ms()
             var.moe.set_duty_cycle(0)
+            wait_share.put(True)
 
             #always go to state 1 from init  
             t1_state = 1   
@@ -72,11 +73,11 @@ def task1_fun(data):
 
         #S1 - GET INTO POSITION     
         elif (t1_state == 1):
-            
+            print("In the process of moving 180")
             #create the 180 degree setpoint (16384 encoder counts per rev, w/ a gear ratio of 6:1 we need 3*
             one_eighty = 3*16384
             #get current clock count 
-            timtimeint = utime.ticks_ms()
+            # timtimeint = utime.ticks_ms()
             var.run(one_eighty,timtimeint)
             print("Task 1 state: ", t1_state)
             if abs(var.get_PWM()) < 10:
@@ -84,12 +85,14 @@ def task1_fun(data):
                 print("I moved 180!")
                 var.moe.set_duty_cycle(0) 
                 #utime.sleep(2)
+                wait_share.put(False)
                 t1_state = 2
                 var.zero()
         
         #S2 - MOVE     
         elif (t1_state == 2):
             
+            print("Task 1 state: ", t1_state)
             #im thinking we need to add one more shared variable so we can give the panning 
             #motor some time to reach its new setpoint before it starts going to a new setpoint 
             #like we hold off on getting a new image and recalculating a new setpoint until 
@@ -97,11 +100,21 @@ def task1_fun(data):
             
             #get the setpoint from the share
             setpoint = setpoint_share.get()  # Get setpoint from shared variable
-            print("Task 1 state: ", t1_state)
-            print(f"updating motor setpoint to: {setpoint}")
+            #setpoint = 16384
+            
+            print(f"updating setpoint is: {setpoint}")
             #update the motors setpoint 
             var.run(setpoint, timtimeint)
            
+            shoot = shoot_share.get()  # Get shoot flag from shared variable
+            
+            if abs(var.get_PWM()) < 10:
+                #turn off trigger motor 
+                print("I moved to new setpoint!")
+                var.moe.set_duty_cycle(0) 
+                wait_share.put(True)
+                var.zero() 
+            
             shoot = shoot_share.get()  # Get shoot flag from shared variable
               
             if shoot == True: 
@@ -127,7 +140,7 @@ def task1_fun(data):
         yield 0
     
     
-    #want target to be at zero (want the controller to force something to zero)
+    # want target to be at zero (want the controller to force something to zero)
 
 def task2_fun(data):
     """!
@@ -135,7 +148,7 @@ def task2_fun(data):
     @param 
     """
     t2_state = 0
-    setpoint_share, shoot_share = data  # Access shared variables from data tuple
+    setpoint_share, shoot_share, wait_share = data  # Access shared variables from data tuple
     print("Starting task 2")
        
     while True:
@@ -166,8 +179,11 @@ def task2_fun(data):
             image = None
             gc.collect()
             
-            t2_state = 1
-            setpoint = 0
+            t2_state = 5
+            #setpoint_share.put(0)
+            #shoot_share.put(False)
+            
+            setpoint = 0 
             shoot = False
         
         #S1 - GET CURRENT IMAGE     
@@ -176,14 +192,18 @@ def task2_fun(data):
             print("Getting current image")
             #utime.sleep(2)
             try:
-                # Get and image and see how long it takes to grab that image
+                # Get image and see how long it takes to grab that image
                 print("Click.", end='')
                 begintime = utime.ticks_ms()
                 var.zero()
-                #while not image:
-                #    image = camera.get_image_nonblocking()
-                #    yield t2_state
-                image = camera.get_image()
+                image = None
+                begintime = utime.ticks_ms()
+                # Use non blocking code 
+                while not image:
+                    image = camera.get_image_nonblocking()
+                    yield t2_state 
+                #image = camera.get_image()
+                print(f" {utime.ticks_diff(utime.ticks_ms(), begintime)} ms")
                 t2_state = 2
                 
             except KeyboardInterrupt:
@@ -223,12 +243,13 @@ def task2_fun(data):
             # by 6 to account for the gear ratio 
             new_setpoint = int((degs/360) * 16384 * 6)
             print("The new setpoint is", new_setpoint)
-            #update the shares value 
+            #update the shares values 
             setpoint_share.put(new_setpoint)
+            wait_share.put(True)
             print(setpoint_share)
             
-            #default to going back to state 1 to get an image
-            t2_state = 1
+            #default to going back to state 5 to get an image
+            t2_state = 5
             
             #if the new setpoint is 0 then its time to shoot 
             if new_setpoint == 0: 
@@ -246,6 +267,21 @@ def task2_fun(data):
             #utime.sleep(2)
             if shoot == False: 
                 t2_state = 1
+
+        #S5 - WAIT FOR PANNING 
+        elif (t2_state == 5):
+            print('Waiting for panning motor to reach previous setpoint')
+            #wait for it to spin to the current desired setpoint, and then transition to state 1
+            wait = wait_share.get()
+            wait_share.put(wait)
+            if wait == False:
+                t2_state = 1  
+                
+        else:
+            # If the state isnt 0, 1, 2, or 3 we have an
+            # invalid state
+            raise ValueError('Invalid state')
+
         print("Exiting task 2")    
         yield 0
             
@@ -257,7 +293,7 @@ def task3_fun(data):
     t3_state = 0; 
     print("Task 3")
     
-    setpoint_share, shoot_share = data  # Access shared variables from data tuple
+    setpoint_share, shoot_share, wait_share = data  # Access shared variables from data tuple
 
     while True:
         
@@ -294,8 +330,8 @@ def task3_fun(data):
             #start the motor off as unmoving 
             var2.moe.set_duty_cycle(0)
             
-            #always go to state 1 
-            t3_state = 1 
+            #always go to state 3
+            t3_state = 3
             
         #S1 - WAIT 
         elif (t3_state == 1):
@@ -333,7 +369,14 @@ def task3_fun(data):
                 shoot_share.put(shoot)
                 done = True
             
-               
+
+        #state 5 wait for 180
+        # elif (t3_state == 3):
+        #     print('Wait')
+        #     #wait for it to spin 180, and then transition to state 1
+        #     if wait_share.get():
+        #         t3_state = 1       
+
         else:
             # If the state isnt 0, 1, or 2 we have an
             # invalid state
@@ -343,8 +386,6 @@ def task3_fun(data):
         yield 0
           
            
-
-
 #-------------------------------------------------------------------------------------------------------  
 
 if __name__ == "__main__":
@@ -356,9 +397,9 @@ if __name__ == "__main__":
     print("Creating shared queues")
     stp = task_share.Share('h', thread_protect=False, name="Shared Setpoint")
     sht = task_share.Share('h', thread_protect=False, name="Shared Shoot")
+    wait = task_share.Share('h', thread_protect=False, name="Shared Wait")
     #done = '_____'
     
-
     # Create the tasks. If trace is enabled for any task, memory will be
     # allocated for state transition tracing, and the application will run out
     # of memory after a while and quit. Therefore, use tracing only for 
@@ -367,15 +408,15 @@ if __name__ == "__main__":
     print("Creating task list")
     #paning motor task
     task1 = cotask.Task(task1_fun, name="Task_1", priority=2, period=10,
-                        profile=True, trace=False, shares=(stp, sht))
+                        profile=True, trace=False, shares=(stp, sht, wait))
     
     #camera task
-    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=100,
-                        profile=True, trace=False, shares=(stp, sht))
+    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=15,
+                        profile=True, trace=False, shares=(stp, sht, wait))
     
     #trigger motor task 
-    task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=100,
-                       profile=True, trace=False, shares=(stp, sht, ))
+    task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=12,
+                       profile=True, trace=False, shares=(stp, sht, wait))
     
     #put all of the tasks on the task list 
     cotask.task_list.append(task1)
