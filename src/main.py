@@ -356,7 +356,7 @@ if __name__ == "__main__":
     print("Creating shared queues")
     stp = task_share.Share('h', thread_protect=False, name="Shared Setpoint")
     sht = task_share.Share('h', thread_protect=False, name="Shared Shoot")
-    done = '_____'
+    #done = '_____'
     
 
     # Create the tasks. If trace is enabled for any task, memory will be
