@@ -95,7 +95,7 @@ class P_Control():
             @return The PWM signal calcuated by the P control loop is returned. 
             """  
         self.setpoint = in_setpoint 
-        encout = self.enco1.readtim()
+        encout = self.enco1.read()
         self.times.append(utime.ticks_diff(utime.ticks_ms(), z_ticks))
         self.position.append(encout)
         self.PWM = self.Kp * (self.setpoint - encout) 

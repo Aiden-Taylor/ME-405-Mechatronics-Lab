@@ -46,29 +46,16 @@ class Encoder:
         self.ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
 
     def readtim(self):
-        """!
-        The readtim function in the Encoder class returns the current timer counter value.
-        """
+        
         return(self.tim.counter())
     
     def read(self):
-       """!
-        The read function in the Encoder class calculates the correct delta in motor postition in degrees from the timer counter and adds 
-        it to the current count.
+        """!
+        The read function in the Encoder class returns the current timer counter value.
         """
-        #256*4*16 encoder ticks per rotation
-        #256 slits
-        #4 edges per slit
-        #16 for gear ratio
+        #read the encoder
         
-        self.curr_pos = self.readtim()*360/(256*4*16)
-        self.delt = self.curr_pos-self.prev_pos
-        if self.delt >= 1000:
-            self.delt -= 1440
-        elif self.delt <= -1000:
-            self.delt += 1440
-        self.motor_position += self.delt
-        return(self.motor_position)
+        return(self.loop())
 
     def zero(self):
         """!
@@ -81,6 +68,26 @@ class Encoder:
         self.curr_pos = 0
         self.delt = 0
         self.tim.counter(0)
+
+    def loop(self):
+        """!
+        The loop function in the Encoder class calculated the correct delta in motor postition in degrees from the timer counter.
+        """
+        #256*4*16 encoder ticks per rotation
+        #256 slits
+        #4 edges per slit
+        #16 for gear ratio
+        self.prev_pos = self.curr_pos
+        self.curr_pos = self.readtim()*360/(256*4*16)
+        self.delt = self.curr_pos-self.prev_pos
+
+        if self.delt >= 1000:
+            self.delt -= 1440
+        elif self.delt <= -1000:
+            self.delt += 1440
+
+        self.motor_position += self.delt
+        return(self.motor_position)
 
 if __name__ == "__main__": #only runs if its the main program 
     #put a main test prog here

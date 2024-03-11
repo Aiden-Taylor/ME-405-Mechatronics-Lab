@@ -70,28 +70,29 @@ class MotorDriver:
         print ("Creating a motor driver")
 
     def set_duty_cycle(self, level):
-        """!
-        This method sets the duty cycle to be sent
-        to the motor to the given level. Positive values
-        cause torque in one direction, negative values
-        in the opposite direction.
-        @param level A signed integer holding the duty
-               cycle of the voltage sent to the motor 
-        """
-        
-        self.ena_pin.value(1) #sets the enable pin high 
-
-        if level > 0:
-            self.ch1.pulse_width_percent(0)
-            self.ch2.pulse_width_percent(level)
-            
-        else:
-            level = level*-1
-            self.ch2.pulse_width_percent(0)
-            self.ch1.pulse_width_percent(level)
-            
-             
-        print(f"Setting duty cycle to {level}")
+       """!
+       This method sets the duty cycle to be sent
+       to the motor to the given level. Positive values
+       cause torque in one direction, negative values
+       in the opposite direction.
+       @param level A signed integer holding the duty
+              cycle of the voltage sent to the motor 
+       """
+       
+       self.ena_pin.value(1) #sets the enable pin high 
+       print(f"Setting duty cycle to {level}")
+       if level > 0:
+              self.ch1.pulse_width_percent(0)
+              self.ch2.pulse_width_percent(level)
+       
+       else:
+              level = level*-1
+              self.ch1.pulse_width_percent(level)
+              self.ch2.pulse_width_percent(0)
+       
+       
+       
+       
     
 if __name__ == "__main__":
     # Script code goes here
