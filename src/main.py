@@ -21,6 +21,7 @@ import mlx_cam
 import csv_reader
 
 #create global variable done 
+global done
 done = False 
 
 def task1_fun(data):
@@ -56,7 +57,7 @@ def task1_fun(data):
             cp1 = pyb.Pin.board.PC6
             cp2 = pyb.Pin.board.PC7
             cptimer = 8
-            Kp_init = 2
+            Kp_init = 5
             setpoint = 0
             setp_init = 0       #   FIGURE OUT WHAT TO SET THIS TO FOR EACH MOTOR
 
@@ -89,7 +90,7 @@ def task1_fun(data):
             print("Task 1 state: ", t1_state)
             
             
-            if abs(var.get_PWM()) < 15:
+            if abs(var.get_PWM()) < 20:
                 count += 1
             if count > 10:
                 #turn off trigger motor 
@@ -120,7 +121,7 @@ def task1_fun(data):
             #update the motors setpoint 
             var.run(setpoint, timtimeint)
             
-            if abs(var.get_PWM()) < 15:
+            if abs(var.get_PWM()) < 20:
                 count += 1
 
             if count > 10:
@@ -346,10 +347,11 @@ def task3_fun(data):
             count2 = 0
 
             #establish controller class
+            global var2
             var2 = controller.P_Control(trigger_Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
 
             #set the Kp value 
-            Kp_init = 2
+            Kp_init = 20
             
             #zero the encoder count and position
             var2.zero()
@@ -383,15 +385,15 @@ def task3_fun(data):
             
             #create the setpoint such that the trigger moves the corrent distance 
             #estimate to be half a revolution   
-            trigger_sp = 180   
+            trigger_sp = 30   
             #get current clock count 
             #timtimeint = utime.ticks_ms()
             #run the motor 
             var2.run(trigger_sp, timtimeint)
             #if the motor has a low PWM value, assume it has reached its position 
-            if abs(var2.get_PWM()) < 20: 
-                count2 += 1
-            if count2 > 15:
+            if var2.get_PWM() < 0: 
+                
+        
                 #turn off trigger motor 
                 var2.moe.set_duty_cycle(0)
                 t3_state = 3
@@ -410,10 +412,10 @@ def task3_fun(data):
         elif (t3_state == 3): 
             print("Task 3 state: ", t3_state)
             print("Return Trigger")
-            
+            var2.set_Kp(2)
             #create the setpoint such that the trigger moves the corrent distance 
             #estimate to be half a revolution   
-            trigger_sp = -180
+            trigger_sp = -30
             #get current clock count 
             #timtimeint = utime.ticks_ms()
             #run the motor 
@@ -447,7 +449,32 @@ def task3_fun(data):
         print("Exiting task 3")      
         yield 0
           
-           
+
+def task4_fun(data):
+    """!
+    Task which runs the trigger motion for motor #2. 
+    @param 
+    """
+    t4_state = 0; 
+    print("Task 4")
+    while True:
+
+        #state 0: init
+        if t4_state == 0:
+            safetypin = pyb.Pin(pyb.Pin.board.PC0, pyb.Pin.IN)
+            t4_state = 1
+            safe = 0
+
+        #safety state
+        elif t4_state == 1:
+            safe = safetypin.value()
+            print("the safety is " + str(safe))
+            if safe:
+                global done
+                done = True
+        yield 0
+
+
 #-------------------------------------------------------------------------------------------------------  
 
 if __name__ == "__main__":
@@ -480,10 +507,14 @@ if __name__ == "__main__":
     task3 = cotask.Task(task3_fun, name="Task_3", priority=2, period=12,
                        profile=True, trace=False, shares=(stp, sht, wait))
     
+    task4 = cotask.Task(task4_fun, name="Task_4", priority=2, period=12,
+                       profile=True, trace=False, shares=(stp, sht, wait))
+    
     #put all of the tasks on the task list 
     cotask.task_list.append(task1)
     cotask.task_list.append(task2)
     cotask.task_list.append(task3)
+    cotask.task_list.append(task4)
 
 
     # Run the memory garbage collector to ensure memory is as defragmented as
@@ -504,6 +535,7 @@ if __name__ == "__main__":
         
         except KeyboardInterrupt:
             var.moe.set_duty_cycle(0)
+            var2.moe.set_duty_cycle(0)
             break
         
 
