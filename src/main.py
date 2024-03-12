@@ -49,7 +49,6 @@ def task1_fun(data):
             # Run state zero code
             print("Task 1 state: ", t1_state)
             print("Initializing panning motor and encoder")
-            utime.sleep(2)
             ena = pyb.Pin.board.PC1
             in1 = pyb.Pin.board.PA0
             in2 = pyb.Pin.board.PA1
@@ -59,9 +58,10 @@ def task1_fun(data):
             cp1 = pyb.Pin.board.PC6
             cp2 = pyb.Pin.board.PC7
             cptimer = 8
-            Kp_init = 7
+            Kp_init = 10
             setpoint = 0
             setp_init = 0       #   FIGURE OUT WHAT TO SET THIS TO FOR EACH MOTOR
+      
 
             #establish controller object
             global var
@@ -70,6 +70,7 @@ def task1_fun(data):
             #zero the encoder count and position
             var.zero()
             var.set_Kp(Kp_init)
+            global timtimeint
             timtimeint = utime.ticks_ms()
             var.moe.set_duty_cycle(0)
             #make sure the queue only has one value  
@@ -91,9 +92,9 @@ def task1_fun(data):
             
             #Check if the motor has reached this new position by checking if the PWM 
             #signal stays below 20 at least 10 times 
-            if abs(var.get_PWM()) < 25:
+            if abs(var.get_PWM()) < 50:
                 count += 1
-            if count > 10: 
+            if count > 20: 
                 print("I moved 180!")
                 #turn off trigger motor
                 var.moe.set_duty_cycle(0)
@@ -104,6 +105,7 @@ def task1_fun(data):
                 t1_state = 3
                 #reset the count to zero 
                 count = 0
+                var.set_Kp(5)
                 #zeero the encoder position 
                 var.zero()
 
@@ -121,10 +123,10 @@ def task1_fun(data):
             
             #Check if the motor has reached this new position by checking if the PWM 
             #signal stays below 20 at least 10 times 
-            if abs(var.get_PWM()) < 25:
+            if abs(var.get_PWM()) < 50:
                 count += 1
 
-            if count > 10:
+            if count > 20:
                 print("I moved to new setpoint!")
                 #turn off trigger motor
                 var.moe.set_duty_cycle(0)
@@ -190,7 +192,6 @@ def task2_fun(data):
             print(f"Current refresh rate: {camera._camera.refresh_rate}")
             camera._camera.refresh_rate = 10.0
             print(f"Refresh rate is now:  {camera._camera.refresh_rate}")
-            utime.sleep(2)
             image = None
             gc.collect()
             
@@ -204,7 +205,6 @@ def task2_fun(data):
             print("Task 2 state: ", t2_state)
             print("Getting current image")
             print("Click.", end='')
-            utime.sleep(1)
             
             #zero the encoder to base the new setpoint calc off of the 
             #zeroed current position 
@@ -213,7 +213,7 @@ def task2_fun(data):
             #init image to be none for the non blocking get image function 
             image = None
             begintime = utime.ticks_ms()
-            
+            utime.sleep(3.25)
             # Use non blocking code 
             while not image:
                 image = camera.get_image()
@@ -429,6 +429,7 @@ def task4_fun(data):
             safetypin = pyb.Pin(pyb.Pin.board.PC0, pyb.Pin.IN)
             #always go to state 1 
             t4_state = 1
+            global safe
             safe = 0
 
         #S1 - SAFETY CHECK 
@@ -440,6 +441,8 @@ def task4_fun(data):
             if safe:
                 global done
                 done = True
+                safe = True
+                
         yield 0
 
 
@@ -503,5 +506,12 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             var.moe.set_duty_cycle(0)
             var2.moe.set_duty_cycle(0)
+            var.zero()
+            utime.sleep(1)
+            if not safe:
+                for i in range(200):
+                    var.run(-180*6, timtimeint)
+                    utime.sleep_ms(10)
+                var.moe.set_duty_cycle(0)
             break
         
