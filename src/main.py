@@ -40,6 +40,7 @@ def task1_fun(data):
         shoot = shoot_share.get()  # Get shoot flag from shared variable
         wait = wait_share.get()
         wait_share.put(wait)
+        
         # Implement FSM inside while loop
         #S0 - MOTOR INIT 
         #Initialize motor pins, Kp value, and position 
@@ -82,61 +83,63 @@ def task1_fun(data):
         #S1 - GET INTO POSITION     
         elif (t1_state == 1):
             print("In the process of moving 180")
-            #create the 180 degree setpoint (16384 encoder counts per rev, w/ a gear ratio of 6:1 we need 3*
+            #create the 180 degree setpoint (180 degrees, w/ a gear ratio of 6:1 so 6*180)
             one_eighty = 6*180
-            #get current clock count 
-            # timtimeint = utime.ticks_ms()
             var.run(one_eighty,timtimeint)
             print("Task 1 state: ", t1_state)
             
-            
+            #Check if the motor has reached this new position by checking if the PWM 
+            #signal stays below 20 at least 10 times 
             if abs(var.get_PWM()) < 20:
                 count += 1
-            if count > 10:
-                #turn off trigger motor 
+            if count > 10: 
                 print("I moved 180!")
-                var.moe.set_duty_cycle(0) 
-                #utime.sleep(2)
+                #turn off trigger motor
+                var.moe.set_duty_cycle(0)
+                #clear the queue and put False  
                 wait_share.get()
                 wait_share.put(False)
+                #always go to the Idle state 3 to wait for the camera image to be taken 
                 t1_state = 3
+                #reset the count to zero 
                 count = 0
+                #zeero the encoder position 
                 var.zero()
 
         
         #S2 - MOVE     
-        elif (t1_state == 2):
-            
-            print("Task 1 state: ", t1_state)
-            #im thinking we need to add one more shared variable so we can give the panning 
-            #motor some time to reach its new setpoint before it starts going to a new setpoint 
-            #like we hold off on getting a new image and recalculating a new setpoint until 
-            #the panning motor has reached within a certain value of its last setpoint 
-            
+        elif (t1_state == 2): 
+            print("Task 1 state: ", t1_state)    
+                    
             setpoint = setpoint_share.get()  # Get setpoint from shared variable
             setpoint_share.put(setpoint)     # Make sure the queue stays neutral
-            #setpoint = 16384
-            
             print(f"updating setpoint is: {setpoint}")
-            #update the motors setpoint 
+           
+            #update the motors setpoint and run 
             var.run(setpoint, timtimeint)
             
+            #Check if the motor has reached this new position by checking if the PWM 
+            #signal stays below 20 at least 10 times 
             if abs(var.get_PWM()) < 20:
                 count += 1
 
             if count > 10:
-                #turn off trigger motor 
                 print("I moved to new setpoint!")
+                #turn off trigger motor
                 var.moe.set_duty_cycle(0)
-                wait_share.get() 
+                #clear the queue and put False  
+                wait_share.get()
                 wait_share.put(False)
-                var.zero()  
+                #go to the Idle state 3 to shoot 
                 t1_state = 3
+                #reset the count to zero 
                 count = 0
+                #zero the encoder position 
+                var.zero()
+                #tell the world its time to shoot 
                 shoot_share.get()
                 shoot_share.put(True)
-              
-           
+    
             
         #S3 - IDLE TO SHOOT     
         elif (t1_state == 3):
@@ -156,37 +159,30 @@ def task1_fun(data):
             
         print("Exiting task 1")
         yield 0
-    
-    
-    # want target to be at zero (want the controller to force something to zero)
+
 
 def task2_fun(data):
     """!
     Task which deals with the thermal camera. 
     @param 
     """
+    
     t2_state = 0
     setpoint_share, shoot_share, wait_share = data  # Access shared variables from data tuple
     print("Starting task 2")
        
     while True:
-
         # Implement FSM inside while loop
+        
         #S0 - CAMERA INIT 
         if t2_state == 0:
             print("Task 2 state: ", t2_state)
-            print("Initializing thermal camera")
-            #utime.sleep(2)
+            print("Initializing thermal camera") 
             #Initialize camera object 
             i2c_bus = mlx_cam.I2C(1)
-
-            #print("MXL90640 Easy(ish) Driver Test")
-
             # Select MLX90640 camera I2C address, normally 0x33, and check the bus
             i2c_address = 0x33
             scanhex = [f"0x{addr:X}" for addr in i2c_bus.scan()]
-            #print(f"I2C Scan: {scanhex}")
-
             # Create the camera object and set it up in default mode
             gc.collect()
             camera = mlx_cam.MLX_Cam(i2c_bus)
@@ -197,105 +193,81 @@ def task2_fun(data):
             image = None
             gc.collect()
             
-            t2_state = 5       
+            #always go to state 5 to wait for the panning motor to move 180 degrees 
+            t2_state = 5      
+            #initialize shoot to be false  
             shoot = False
         
         #S1 - GET CURRENT IMAGE     
         elif t2_state == 1: 
             print("Task 2 state: ", t2_state)
             print("Getting current image")
-            #utime.sleep(2)
-            # try:
-                # Get image and see how long it takes to grab that image
             print("Click.", end='')
-            begintime = utime.ticks_ms()
+            
+            #zero the encoder to base the new setpoint calc off of the 
+            #zeroed current position 
             var.zero()
+            
+            #init image to be none for the non blocking get image function 
             image = None
             begintime = utime.ticks_ms()
+            
             # Use non blocking code 
             while not image:
                 image = camera.get_image()
                 yield t2_state 
-            #image = camera.get_image()
             print(f" {utime.ticks_diff(utime.ticks_ms(), begintime)} ms")
+            
+            #always go to state 2 to interpret image 
             t2_state = 2
-                
-            # except KeyboardInterrupt:
-            #     break
             
         #S2 - INTERPRET IMAGE 
         elif t2_state == 2: 
             print("Task 2 state: ", t2_state)
             print("Interpreting image")
-            #utime.sleep(2)
+            #convert the image to CSV format 
             reed = csv_reader.CSV(camera.get_csv(image, limits=(0, 99)))
+            #use the readdata() function to calculate the column with the highest 
+            #thermal values 
             reed.readdata()
+            #extract the column and total value and print 
             col, total = reed.col_largest()
             print("COLLUMN", col,"TOTAL", total)
-    
+            #always go to state 3 to calculate the new setpoint 
             t2_state = 3       
             
         #S3 - CALCULATE NEW SETPOINT 
         elif t2_state == 3: 
             print("Task 2 state: ", t2_state)
             print("Calculating new setpoint")
-            #utime.sleep(2)
-            # FOV = 55 degrees x 35 degrees
-            
+           
+            # Camera FOV = 55 degrees x 35 degrees
             # Gear Ratio = 6:1
             # Our motors current position is the center of the frame, so column 16 
             # If we want to make the col with the highest total heat value the new center of the frame 
-            # Then we have to calculate how many encoder ticks it takes to reach that position 
-            
-            #calculate how many degrees we need to move the turret
+            # Then we have to calculate how many degrees it takes to reach that position 
             # 1 pixel = 1.72 degrees
             # Resolution = 32 x 24 pixels
             degs = (col-16)*1.72
-            new_setpoint = int(degs * 6)
-
-            #calculate how many encoder ticks it takes to move that distance
-            # Divide by 360 to get rid of degrees, multiply by 16384 to convert to encoder ticks, multiply 
-            # by 6 to account for the gear ratio 
-            
-            
-            # new_setpoint = int((degs/360) * 16384 * 6)
-            
-            
+            #multiply degree value by 6 to account for the gear ratio and pring 
+            new_setpoint = int(degs * 6)  
             print("The new setpoint is", new_setpoint)
             #update the shares values 
             setpoint_share.get()
-
-##############################################################################
-            # new_setpoint = -16384
-
             setpoint_share.put(new_setpoint)
             wait_share.get()
             wait_share.put(True)
-            
-            #default to going back to state 5 to wait until the panning motor is done moving 
-            t2_state = 5
-            
-            #if the new setpoint is 0 then its time to shoot 
-            
-            
             print("Updated the motor angle")
             shoot = False
             shoot_share.get()
             shoot_share.put(shoot)
+            #always go to state 4 Idle for shoot since target has been found and new setpoint identified. 
             t2_state = 4 
-            
-            # #if its not time to shoot, keep putting shoot = False into the queue 
-            # shoot_share.clear()
-            # shoot_share.put(shoot)
 
         #S4 - IDLE FOR SHOOT  
         elif t2_state == 4: 
             print("Task 2 state: ", t2_state)
             print("Camera Idling to shoot")
-            #utime.sleep(2)
-            # shoot = shoot_share.get()
-            # if shoot == False: 
-            #     t2_state = 1
 
         #S5 - WAIT FOR PANNING 
         elif (t2_state == 5):
@@ -307,7 +279,7 @@ def task2_fun(data):
                 t2_state = 1  
                 
         else:
-            # If the state isnt 0, 1, 2, or 3 we have an
+            # If the state isnt 0, 1, 2, 3, 4 or 5 we have an
             # invalid state
             raise ValueError('Invalid state')
 
@@ -327,12 +299,12 @@ def task3_fun(data):
     while True:
         
         # Implement FSM inside while loop
-        #S0 - MOTOR INIT 
-        #Initialize motor pins, Kp value, and position 
+        #S0 - MOTOR INIT  
         if (t3_state == 0):
             print("Task 3 state: ", t3_state)
             print("Initializing trigger motor and encoder")
-            #utime.sleep(2)
+            
+            #Initialize motor pins, Kp value, and position
             ena = pyb.Pin.board.PA10
             in1 = pyb.Pin.board.PB4
             in2 = pyb.Pin.board.PB5
@@ -361,22 +333,20 @@ def task3_fun(data):
             #start the motor off as unmoving 
             var2.moe.set_duty_cycle(0)
             
-            #always go to state 3
+            #always go to state 1
             t3_state = 1
             
         #S1 - WAIT 
         elif (t3_state == 1):
             print("Task 3 state: ", t3_state)
             print("Trigger motor waiting to shoot")
-            #utime.sleep(2)
             var2.moe.set_duty_cycle(0)
             
             shoot = shoot_share.get()  # Get shoot flag from shared variable
-            
+            shoot_share.put(shoot)     # Put shoot back in so that Task 1 can get it
+            #if shoot is true go to the shoot state 
             if shoot == True: 
                 t3_state = 2 
-                
-            shoot_share.put(shoot) # Put shoot back in so that Task 1 can get it 
                 
         #S2 - SHOOT 
         elif (t3_state == 2): 
@@ -384,31 +354,27 @@ def task3_fun(data):
             print("Time to shoot!")
             
             #create the setpoint such that the trigger moves the corrent distance 
-            #estimate to be half a revolution   
+            #estimate to be 30 degrees  
             trigger_sp = 30   
-            #get current clock count 
-            #timtimeint = utime.ticks_ms()
             #run the motor 
             var2.run(trigger_sp, timtimeint)
             #if the motor has a low PWM value, assume it has reached its position 
             if var2.get_PWM() < 0: 
-                
         
                 #turn off trigger motor 
                 var2.moe.set_duty_cycle(0)
+                #always go to state 3 to return the trigger to its origonal posisiton 
                 t3_state = 3
+                #initialize count2 to be zero for the next state 
                 count2 = 0
-                # shoot = False 
-                # shoot_share.put(shoot)
-               
-                #raise Keyboar
+                #zero encoder count for the next state
                 var2.zero()
+                #set shoot to be False since we are done shooting 
                 shoot = False 
+                shoot_share.get()
                 shoot_share.put(shoot)
                 
-                #raise KeyboardInterrupt
-        
-        #s3 return trigger mechanism
+        #S3 - RETURN TRIGGER MECHANISM
         elif (t3_state == 3): 
             print("Task 3 state: ", t3_state)
             print("Return Trigger")
@@ -427,22 +393,12 @@ def task3_fun(data):
                 #turn off trigger motor 
                 var2.moe.set_duty_cycle(0)
                 t3_state = 1
-                # shoot = False 
-                # shoot_share.put(shoot)
                 global done
                 done = True
-                #raise KeyboardInterrupt
-
-
-        #state 5 wait for 180
-        # elif (t3_state == 3):
-        #     print('Wait')
-        #     #wait for it to spin 180, and then transition to state 1
-        #     if wait_share.get():
-        #         t3_state = 1       
+ 
 
         else:
-            # If the state isnt 0, 1, or 2 we have an
+            # If the state isnt 0, 1, 2 or 3 we have an
             # invalid state
             raise ValueError('Invalid state')
         
@@ -452,23 +408,28 @@ def task3_fun(data):
 
 def task4_fun(data):
     """!
-    Task which runs the trigger motion for motor #2. 
+    Task which enables a kill switch wire for the design to be terminated upon pulling 
+    the wire. 
     @param 
     """
     t4_state = 0; 
     print("Task 4")
     while True:
 
-        #state 0: init
+        #S0 - INITALIZE PIN 
         if t4_state == 0:
+            #initialize the input pin for the killswitch 
             safetypin = pyb.Pin(pyb.Pin.board.PC0, pyb.Pin.IN)
+            #always go to state 1 
             t4_state = 1
             safe = 0
 
-        #safety state
+        #S1 - SAFETY CHECK 
         elif t4_state == 1:
+            #get the pin value 
             safe = safetypin.value()
-            print("the safety is " + str(safe))
+            print("The safety is " + str(safe))
+            #if the pin is not safe, terminate the program by setting done equal to True 
             if safe:
                 global done
                 done = True
@@ -487,7 +448,6 @@ if __name__ == "__main__":
     stp = task_share.Share('h', thread_protect=False, name="Shared Setpoint")
     sht = task_share.Share('h', thread_protect=False, name="Shared Shoot")
     wait = task_share.Share('h', thread_protect=False, name="Shared Wait")
-    #done = '_____'
     
     # Create the tasks. If trace is enabled for any task, memory will be
     # allocated for state transition tracing, and the application will run out
@@ -538,11 +498,3 @@ if __name__ == "__main__":
             var2.moe.set_duty_cycle(0)
             break
         
-
-    # Print a table of task data and a table of shared information data
-    #print('\n' + str (cotask.task_list))
-    #print(task_share.show_all())
-    #print(task1.get_trace())
-    #print('')
-    #var.print_res()
-    #var2.print_res()
