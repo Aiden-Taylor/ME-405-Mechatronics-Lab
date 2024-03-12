@@ -19,6 +19,7 @@ import controller
 import utime
 import mlx_cam
 import csv_reader
+import math
 
 #create global variable done 
 global done
@@ -58,7 +59,7 @@ def task1_fun(data):
             cp1 = pyb.Pin.board.PC6
             cp2 = pyb.Pin.board.PC7
             cptimer = 8
-            Kp_init = 5
+            Kp_init = 7
             setpoint = 0
             setp_init = 0       #   FIGURE OUT WHAT TO SET THIS TO FOR EACH MOTOR
 
@@ -90,7 +91,7 @@ def task1_fun(data):
             
             #Check if the motor has reached this new position by checking if the PWM 
             #signal stays below 20 at least 10 times 
-            if abs(var.get_PWM()) < 20:
+            if abs(var.get_PWM()) < 25:
                 count += 1
             if count > 10: 
                 print("I moved 180!")
@@ -120,7 +121,7 @@ def task1_fun(data):
             
             #Check if the motor has reached this new position by checking if the PWM 
             #signal stays below 20 at least 10 times 
-            if abs(var.get_PWM()) < 20:
+            if abs(var.get_PWM()) < 25:
                 count += 1
 
             if count > 10:
@@ -203,6 +204,7 @@ def task2_fun(data):
             print("Task 2 state: ", t2_state)
             print("Getting current image")
             print("Click.", end='')
+            utime.sleep(1)
             
             #zero the encoder to base the new setpoint calc off of the 
             #zeroed current position 
@@ -247,8 +249,13 @@ def task2_fun(data):
             # If we want to make the col with the highest total heat value the new center of the frame 
             # Then we have to calculate how many degrees it takes to reach that position 
             # 1 pixel = 1.72 degrees
-            # Resolution = 32 x 24 pixels
-            degs = (col-16)*1.72
+            # Resolution = 32 x 24 pixels 
+            #adjust for the trig of the table
+            dist_from_table_edge = 4.5/12
+            x = 8-dist_from_table_edge
+            #trig_adjustment = math.atan(4.2/(8+x))/27.5 
+            trig_adjustment = 0.5
+            degs = (col-16)*1.72*trig_adjustment 
             #multiply degree value by 6 to account for the gear ratio and pring 
             new_setpoint = int(degs * 6)  
             print("The new setpoint is", new_setpoint)
@@ -314,7 +321,7 @@ def task3_fun(data):
             cp1 = pyb.Pin.board.PB6
             cp2 = pyb.Pin.board.PB7
             cptimer = 4
-            trigger_Kp_init = 2
+            trigger_Kp_init = 20
             setp_init = 360
             count2 = 0
 
@@ -323,7 +330,7 @@ def task3_fun(data):
             var2 = controller.P_Control(trigger_Kp_init, setp_init, 0, motimer, ena, in1, in2, cp1, cp2, cptimer)
 
             #set the Kp value 
-            Kp_init = 20
+            Kp_init = 25
             
             #zero the encoder count and position
             var2.zero()
