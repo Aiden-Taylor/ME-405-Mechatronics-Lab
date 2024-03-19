@@ -4,10 +4,7 @@
     This is the main file for the term project. 
 
 @author Aiden Taylor, Jack Foxcroft, Julia Fay
-@date   2024-Mar-04 
-
-note: the encoder reader file was changed and doxygen comments there need to be updated 
-
+@date   2024-Mar-18
 """
 
 #import all relevant modlues and files 
@@ -27,8 +24,13 @@ done = False
 
 def task1_fun(data):
     """!
-    Task which runs the panning motion for motor #1. 
-    @param 
+    Task 1 runs the panning motion for motor #1. This task first moves the turret into the 
+    aiming position (180 degrees from initial position). Then, updates the panning motor 
+    setpoint calculated by the thermal camera and runs until the PWM signal falls below 50%
+    for more than 20 cycles and sets the panning motor duty cycle to 0 and waits for the trigger
+    motor to complete its task
+    
+    @param data The tuple used to store all shared variables between tasks
     """
     setpoint_share, shoot_share, wait_share = data  # Access shared variables from data tuple
     t1_state = 0; 
@@ -106,11 +108,11 @@ def task1_fun(data):
                 #reset the count to zero 
                 count = 0
                 var.set_Kp(5)
-                #zeero the encoder position 
+                #zero the encoder position 
                 var.zero()
 
         
-        #S2 - MOVE     
+        #S2 - TRACK TARGET    
         elif (t1_state == 2): 
             print("Task 1 state: ", t1_state)    
                     
@@ -122,7 +124,7 @@ def task1_fun(data):
             var.run(setpoint, timtimeint)
             
             #Check if the motor has reached this new position by checking if the PWM 
-            #signal stays below 20 at least 10 times 
+            #signal stays below 50 at least 20 times 
             if abs(var.get_PWM()) < 50:
                 count += 1
 
@@ -144,7 +146,7 @@ def task1_fun(data):
                 shoot_share.put(True)
     
             
-        #S3 - IDLE TO SHOOT     
+        #S3 - IDLE     
         elif (t1_state == 3):
             print("Task 1 state: ", t1_state)
             print("Panning motor idling to shoot or take camera image")
@@ -166,8 +168,13 @@ def task1_fun(data):
 
 def task2_fun(data):
     """!
-    Task which deals with the thermal camera. 
-    @param 
+    Task 2 deals with the thermal camera. It initializes the camera's i2c communication
+    protocal them waits until the panning motor completes its initial movement to the aiming position
+    180 degrees from the initial postion. Then wait 3.25 seconds and get the image.
+    Then, using the csv_reader class, calculate the column with the maximum summed thermal
+    signature and calculate the setpoint based on the column.
+    
+    @param data The tuple used to store all shared variables between tasks
     """
     
     t2_state = 0
@@ -295,8 +302,11 @@ def task2_fun(data):
             
 def task3_fun(data):
     """!
-    Task which runs the trigger motion for motor #2. 
-    @param 
+    Task 3 runs the trigger motion for the motor #2. First, task 3 waits until the panning
+    motor reaches the setpoint calculated by the thermal camera. Then, it runs the trigger motor
+    to a setpoint of 30 degrees, then returns to its intial position.
+
+    @param data The tuple used to store all shared variables between tasks
     """
     t3_state = 0; 
     print("Task 3")
@@ -403,7 +413,6 @@ def task3_fun(data):
                 global done
                 done = True
  
-
         else:
             # If the state isnt 0, 1, 2 or 3 we have an
             # invalid state
@@ -415,9 +424,11 @@ def task3_fun(data):
 
 def task4_fun(data):
     """!
-    Task which enables a kill switch wire for the design to be terminated upon pulling 
-    the wire. 
-    @param 
+    Task 4 enables a kill switch wire for the design to be terminated upon pulling 
+    the wire. State 0 initializes the pin C0 to an input and if the pin it pulled
+    terminate the program.
+    
+    @param data The tuple used to store all shared variables between tasks
     """
     t4_state = 0; 
     print("Task 4")

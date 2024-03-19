@@ -1,26 +1,28 @@
-## @file mlx_cam.py
-# 
-#  RAW VERSION
-#  This version uses a stripped down MLX90640 driver which produces only raw
-#  data, not calibrated data, in order to save memory.
-# 
-#  This file contains a wrapper that facilitates the use of a Melexis MLX90640
-#  thermal infrared camera for general use. The wrapper contains a class MLX_Cam
-#  whose use is greatly simplified in comparison to that of the base class,
-#  @c class @c MLX90640, by mwerezak, who has a cool fox avatar, at
-#  @c https://github.com/mwerezak/micropython-mlx90640
-# 
-#  To use this code, upload the directory @c mlx90640 from mwerezak with all
-#  its contents to the root directory of your MicroPython device, then copy
-#  this file to the root directory of the MicroPython device.
-# 
-#  There's some test code at the bottom of this file which serves as a
-#  beginning example.
-# 
-#  @author mwerezak Original files, Summer 2022
-#  @author JR Ridgely Added simplified wrapper class @c MLX_Cam, January 2023
-#  @copyright (c) 2022-2023 by the authors and released under the GNU Public
-#      License, version 3.
+"""!@file mlx_cam.py
+
+ RAW VERSION
+ This version uses a stripped down MLX90640 driver which produces only raw
+ data, not calibrated data, in order to save memory.
+
+ This file contains a wrapper that facilitates the use of a Melexis MLX90640
+ thermal infrared camera for general use. The wrapper contains a class MLX_Cam
+ whose use is greatly simplified in comparison to that of the base class,
+ @c class @c MLX90640, by mwerezak, who has a cool fox avatar, at
+ @c https://github.com/mwerezak/micropython-mlx90640
+
+ To use this code, upload the directory @c mlx90640 from mwerezak with all
+ its contents to the root directory of your MicroPython device, then copy
+ this file to the root directory of the MicroPython device.
+
+ There's some test code at the bottom of this file which serves as a
+ beginning example.
+
+ @author mwerezak Original files, Summer 2022
+ @author JR Ridgely Added simplified wrapper class @c MLX_Cam, January 2023
+ @copyright (c) 2022-2023 by the authors and released under the GNU Public
+     License, version 3.
+
+"""
 
 import utime as time
 from machine import Pin, I2C
@@ -29,21 +31,27 @@ from mlx90640.calibration import NUM_ROWS, NUM_COLS, IMAGE_SIZE, TEMP_K
 from mlx90640.image import ChessPattern, InterleavedPattern
 
 
-## @brief   Class which wraps an MLX90640 thermal infrared camera driver to
-#           make it easier to grab and use an image. 
-#  @details This image is in "raw" mode, meaning it has not been calibrated
-#           (which takes lots of time and memory) and only gives relative IR
-#           emission seen by pixels, not estimates of the temperatures.
+"""! @brief   Class which wraps an MLX90640 thermal infrared camera driver to
+          make it easier to grab and use an image. 
+     @details This image is in "raw" mode, meaning it has not been calibrated
+            (which takes lots of time and memory) and only gives relative IR
+            emission seen by pixels, not estimates of the temperatures.
+
+"""
+
 class MLX_Cam:
 
-    ## @brief   Set up an MLX90640 camera.
-    #  @param   i2c An I2C bus which has been set up to talk to the camera;
-    #           this must be a bus object which has already been set up
-    #  @param   address The address of the camera on the I2C bus (default 0x33)
-    #  @param   pattern The way frames are interleaved, as we read only half
-    #           the pixels at a time (default ChessPattern)
-    #  @param   width The width of the image in pixels; leave it at default
-    #  @param   height The height of the image in pixels; leave it at default
+    """!
+        @brief   Set up an MLX90640 camera.
+        @param   i2c An I2C bus which has been set up to talk to the camera;
+                this must be a bus object which has already been set up
+        @param   address The address of the camera on the I2C bus (default 0x33)
+        @param   pattern The way frames are interleaved, as we read only half
+                the pixels at a time (default ChessPattern)
+        @param   width The width of the image in pixels; leave it at default
+        @param   height The height of the image in pixels; leave it at default
+        """
+     
     def __init__(self, i2c, address=0x33, pattern=ChessPattern,
                  width=NUM_COLS, height=NUM_ROWS):
 
@@ -71,35 +79,37 @@ class MLX_Cam:
         self._image = self._camera.raw
 
 
-    ## @brief   Show low-resolution camera data as shaded pixels on a text
-    #           screen.
-    #  @details The data is printed as a set of characters in columns for the
-    #           number of rows in the camera's image size. This function is
-    #           intended for testing an MLX90640 thermal infrared sensor.
-    #  
-    #           A pair of extended ACSII filled rectangles is used by default
-    #           to show each pixel so that the aspect ratio of the display on
-    #           screens isn't too smushed. Each pixel is colored using ANSI
-    #           terminal escape codes which work in only some programs such as
-    #           PuTTY.  If shown in simpler terminal programs such as the one
-    #           used in Thonny, the display just shows a bunch of pixel
-    #           symbols with no difference in shading (boring).
-    # 
-    #           A simple auto-brightness scaling is done, setting the lowest
-    #           brightness of a filled block to 0 and the highest to 255. If
-    #           there are bad pixels, this can reduce contrast in the rest of
-    #           the image.
-    # 
-    #           After the printing is done, character color is reset to a
-    #           default of medium-brightness green, or something else if
-    #           chosen.
-    #  @param   array An array of (self._width * self._height) pixel values
-    #  @param   pixel Text which is shown for each pixel, default being a pair
-    #           of extended-ASCII blocks (code 219)
-    #  @param   textcolor The color to which printed text is reset when the
-    #           image has been finished, as a string "<r>;<g>;<b>" with each
-    #           letter representing the intensity of red, green, and blue from
-    #           0 to 255
+    """! @brief   Show low-resolution camera data as shaded pixels on a text
+                screen.
+        @details The data is printed as a set of characters in columns for the
+                number of rows in the camera's image size. This function is
+                intended for testing an MLX90640 thermal infrared sensor.
+        
+                A pair of extended ACSII filled rectangles is used by default
+                to show each pixel so that the aspect ratio of the display on
+                screens isn't too smushed. Each pixel is colored using ANSI
+                terminal escape codes which work in only some programs such as
+                PuTTY.  If shown in simpler terminal programs such as the one
+                used in Thonny, the display just shows a bunch of pixel
+                symbols with no difference in shading (boring).
+        
+                A simple auto-brightness scaling is done, setting the lowest
+                brightness of a filled block to 0 and the highest to 255. If
+                there are bad pixels, this can reduce contrast in the rest of
+                the image.
+        
+                After the printing is done, character color is reset to a
+                default of medium-brightness green, or something else if
+                chosen.
+        @param   array An array of (self._width * self._height) pixel values
+        @param   pixel Text which is shown for each pixel, default being a pair
+                of extended-ASCII blocks (code 219)
+        @param   textcolor The color to which printed text is reset when the
+                image has been finished, as a string "<r>;<g>;<b>" with each
+                letter representing the intensity of red, green, and blue from
+                0 to 255
+        """
+    
     def ascii_image(self, array, pixel="██", textcolor="0;180;0"):
 
         minny = min(array)
@@ -116,11 +126,13 @@ class MLX_Cam:
     asc = " -.:=+*#%@"
 
 
-    ## @brief   Show a data array from the IR image as ASCII art.
-    #  @details Each character is repeated twice so the image isn't squished
-    #           laterally. A code of "><" indicates an error, probably caused
-    #           by a bad pixel in the camera. 
-    #  @param   array The array to be shown, probably @c image.v_ir
+    """! @brief   Show a data array from the IR image as ASCII art.
+         @details Each character is repeated twice so the image isn't squished
+              laterally. A code of "><" indicates an error, probably caused
+              by a bad pixel in the camera. 
+         @param   array The array to be shown, probably @c image.v_ir
+     """
+     
     def ascii_art(self, array):
 
         scale = len(MLX_Cam.asc) / (max(array) - min(array))
@@ -139,13 +151,14 @@ class MLX_Cam:
         return
 
 
-    ## @brief   Generate a string containing image data in CSV format.
-    #  @details This function generates a set of lines, each having one row of
-    #           image data in Comma Separated Variable format. The lines can
-    #           be printed or saved to a file using a @c for loop.
-    #  @param   array The array of data to be presented
-    #  @param   limits A 2-iterable containing the maximum and minimum values
-    #           to which the data should be scaled, or @c None for no scaling
+    """! @brief   Generate a string containing image data in CSV format.
+         @details This function generates a set of lines, each having one row of
+              image data in Comma Separated Variable format. The lines can
+              be printed or saved to a file using a @c for loop.
+         @param   array The array of data to be presented
+         @param   limits A 2-iterable containing the maximum and minimum values
+              to which the data should be scaled, or @c None for no scaling
+    """
     def get_csv(self, array, limits=None):
 
         if limits and len(limits) == 2:
@@ -166,15 +179,17 @@ class MLX_Cam:
         return
 
 
-    ## @brief   Get one image from a MLX90640 camera, @b blocking other tasks
-    #           from running until the image has been received.
-    #  @details Grab one image from the given camera and return it. Both
-    #           subframes (the odd checkerboard portions of the image) are
-    #           grabbed and combined (maybe; this is the raw version, so the
-    #           combination is sketchy and not fully tested). It is assumed
-    #           that the camera is in the ChessPattern (default) mode as it
-    #           probably should be.
-    #  @returns A reference to the image object we've just filled with data
+    """! @brief   Get one image from a MLX90640 camera, @b blocking other tasks
+              from running until the image has been received.
+         @details Grab one image from the given camera and return it. Both
+              subframes (the odd checkerboard portions of the image) are
+              grabbed and combined (maybe; this is the raw version, so the
+              combination is sketchy and not fully tested). It is assumed
+              that the camera is in the ChessPattern (default) mode as it
+              probably should be.
+         @returns A reference to the image object we've just filled with data
+     """
+     
     def get_image(self):
 
         for subpage in (0, 1):
@@ -185,20 +200,21 @@ class MLX_Cam:
         return image
 
 
-    ## @brief   Get an image from an MLX90640 camera in a non-blocking way.
-    #  @details This function is to be called repeatedly; it will return @c None
-    #           until a complete image has been retrieved (this takes around a
-    #           quarter to half second) and will then return the image.
-    #
-    #      @b Example: This code would be inside a task function which yields 
-    #      repeatedly as long as there isn't a complete image available.
-    #      @code
-    #      image = None
-    #      while not image:
-    #          image = camera.get_image_nonblocking()
-    #          yield(state)
-    #      @endcode
-    #
+    """! @brief   Get an image from an MLX90640 camera in a non-blocking way.
+         @details This function is to be called repeatedly; it will return @c None
+              until a complete image has been retrieved (this takes around a
+              quarter to half second) and will then return the image.
+    
+         @b Example: This code would be inside a task function which yields 
+         repeatedly as long as there isn't a complete image available.
+         @code
+         image = None
+         while not image:
+             image = camera.get_image_nonblocking()
+             yield(state)
+         @endcode
+         """
+    
     def get_image_nonblocking(self):
 
         # If this is the first recent call, begin the process

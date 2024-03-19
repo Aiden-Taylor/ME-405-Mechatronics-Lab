@@ -1,10 +1,10 @@
 """! @file encoder_reader.py
   
-  The main file for our Lab 2 Read Motor Encoder Assignment. This file is used to read the position
+  The encoder_reader class file for our Term Project. This file is used to read the position
   of a motor using the attatched motor encoder. This is accomplished by creating an Encoder class
-  with several functions defined to aid in the task of reading the encoder including init, read, zero
-  and loop. At the bottom of the code, the Encoder class is implemented and continuously prints the
-  updated motor positions for two motors.
+  with several functions defined to aid in the task of reading the encoder including init, read, and 
+  zero. At the bottom of the code, for testing purposes the Encoder class is implemented and 
+  continuously prints the updated motor positions for two motors if run as main.
   
   @author Aiden Taylor, Julia Fay, Jack Foxcroft
   """
@@ -24,8 +24,13 @@ class Encoder:
         """!
         The initialization function inside the Encoder class sets up the pins for timer channels, 
         the timer, and the two channels needed to read AB encoder quadrature output. 
+        
+        @param pin1 The encoder pin on the L6206 corresponding to channel A for the encoder. 
+        
+        @param pin2 The encoder pin on the L6206 corresponding to channel B for the encoder. 
+        
+        @param timer The timer chanel corresponding to the selected encoder pins.  
         """
-        #put some stuff here
 
         # pin1 and pin2 inputs should be in this format: pyb.Pin.board.PB7
         self.p1 = pyb.Pin(pin1, mode=pyb.Pin.IN)
@@ -46,32 +51,22 @@ class Encoder:
         self.ch2 = self.tim.channel(2, mode=pyb.Timer.ENC_AB, pin=pin2)
 
     def readtim(self):
+        """!
+        The readtim function in the Encoder class returns the current timer counter value.
+
+        @return The current timer counter value is returned. 
+        """
         
         return(self.tim.counter())
     
     def read(self):
-        """!
-        The read function in the Encoder class returns the current timer counter value.
-        """
-        #read the encoder
-        
-        return(self.loop())
 
-    def zero(self):
         """!
-        The zero function in the Encoder class sets the timer count, motor position, prev_pos, curr_pos, and delt to zero.
-        This can be used to initialize the position of the motor. 
-        """
-        #set the counter to zero
-        self.motor_position = 0
-        self.prev_pos = 0
-        self.curr_pos = 0
-        self.delt = 0
-        self.tim.counter(0)
-
-    def loop(self):
-        """!
-        The loop function in the Encoder class calculated the correct delta in motor postition in degrees from the timer counter.
+        The read function in the Encoder class calculates the correct delta in motor
+        postition in degrees from the timer counter. This function also ensures that 
+        there are no issues with underflow or overflow for the encoder count. 
+    
+        @return The current motor position in degrees is returned. 
         """
         #256*4*16 encoder ticks per rotation
         #256 slits
@@ -88,6 +83,19 @@ class Encoder:
 
         self.motor_position += self.delt
         return(self.motor_position)
+
+    def zero(self):
+        """!
+        The zero function in the Encoder class sets the timer count, motor position, prev_pos, curr_pos, and delt to zero.
+        This can be used to initialize the position of the motor. 
+        """
+        #set the counter to zero
+        self.motor_position = 0
+        self.prev_pos = 0
+        self.curr_pos = 0
+        self.delt = 0
+        self.tim.counter(0)
+
 
 if __name__ == "__main__": #only runs if its the main program 
     #put a main test prog here
