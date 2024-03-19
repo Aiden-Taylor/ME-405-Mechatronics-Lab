@@ -6,11 +6,13 @@ The turret hardware consists of a Nucleo STM32L476RG, and an adapter board, the 
 The mechanical design consists of 3D-printed gears, bearings, a baseplate, motor mounts, and a fixture to house the Nerf gun. The CAD model of the system is shown below with details regarding each component of the system and their purpose.
 
 ![mechanical](sys.png)
+
 **Figure 1:** Turret CAD Model
 
 The gear ratio of our system is 6:1 and was designed to allow the turret to spin 180 degrees in one second. Overall, our design was made to be as simple and compact as possible while still being able to meet the requirements of the project.
 
 ![irlsys](turret.png)
+
 **Figure 2:** Fully assembled turret with aiming and triggering subsystems.
 
 To aid in providing the necessary force to engage the trigger mechanism, the team added a spring-tensioned string through the bottom portion of the trigger. Thus, when the servo moved the triggering lever, the trigger would engage consistently. A barrel support piece was added to aid in the gun's stability. Another spring was used to keep the gun secured on this support piece as seen in the left image above.
