@@ -6,12 +6,12 @@ The turret hardware consists of a Nucleo STM32L476RG, and an adapter board, the 
 The mechanical design consists of 3D-printed gears, bearings, a baseplate, motor mounts, and a fixture to house the Nerf gun. The CAD model of the system is shown below with details regarding each component of the system and their purpose.
 
 ![mechanical](sys.png)
-<p style="text-align: center;">**Figure 1:** Turret CAD Model</p>
+**Figure 1:** Turret CAD Model
 
 The gear ratio of our system is 6:1 and was designed to allow the turret to spin 180 degrees in one second. Overall, our design was made to be as simple and compact as possible while still being able to meet the requirements of the project.
 
 ![irlsys](turret.png)
-<p style="text-align: center;">**Figure 2:** Fully assembled turret with aiming and triggering subsystems.</p>
+**Figure 2:** Fully assembled turret with aiming and triggering subsystems.
 
 To aid in providing the necessary force to engage the trigger mechanism, the team added a spring-tensioned string through the bottom portion of the trigger. Thus, when the servo moved the triggering lever, the trigger would engage consistently. A barrel support piece was added to aid in the gun's stability. Another spring was used to keep the gun secured on this support piece as seen in the left image above.
 
@@ -23,8 +23,13 @@ Our design was successful in tracking a target and shooting them after 5 seconds
 
 ## Takeaways and Recommendations
 Overall, this project was very informative in terms of how to effectively implement a FSM in Python while utilizing a priority scheduler. You have to make sure that the period of your tasks is less than the period specified in the scheduler to ensure the correct operation. Also, the priority of the tasks must be balanced such that each task will have the chance to run. Having too high of a priority for a task may result in that task being run exclusively. Also, the team learned how to currently utilize shares. To ensure only one value was stored in each of the queues, the queue was cleared, and then restored at each instance of using the queue. This allowed us to avoid issues with grabbing an incorrect previous value for a share. 
+
 In terms of the mechanical design of the system, several things could be improved upon. The budget for our system led us to the use of 3D printed parts which was a limiting factor in the mechanical operation. We used PLA to print the baseplate and had permanent shafts designed into the part which sheared off immediately after assembling the gears. To better improve this we suggest making the shafts separate parts made of stronger materials less prone to shearing.
+
 We also noticed that the system was very prone to high friction and thus responded slower to inputs from our controller. To decrease system friction we recommend using higher-performance bearings, steel shafts, higher tolerance manufacturing of the baseplate for center-to-center distance of the gears, and snap rings to retain the gears and ensure correct alignment.
+
 The system was also prone to missing its target which was the cause of many different issues. In our duel, we had five chances to aim, trigger, and shoot our target. We only hit our target one out of the five times, the system missed its target twice, a piece of string used to pre-load the trigger caught in the gears, and our trigger motor wire caught in the gears. In order to remedy these issues we recommend implementing better and more organized wire/string management to ensure the gears are left free to spin. To solve the aiming issue we recommend creating a more robust process in setting up the turret’s initial position and angle as well as the camera position and angle in reference to the turret and target.
+
 The triggering mechanism also had its fair share of issues, mainly stemming from the torque required to trigger the Nerf gun. We recommend either using some sort of mechanical leverage to trigger the gun or selecting a higher torque servo motor for triggering to increase the repeatability of this system.
+
 One software system that would be really interesting to implement would be real-time tracking. Our system takes one image of the target and calculates a setpoint based on the distance to the target, and the image column that the target was identified in. However, this required us to take the image after the target had stopped moving (after the five seconds had elapsed) to make certain that the setpoint calculated was correct. If real-time tracking was implemented, we might be able to calculate new setpoints every second or quicker to trigger the Nerf gun before the 5 seconds were up.
