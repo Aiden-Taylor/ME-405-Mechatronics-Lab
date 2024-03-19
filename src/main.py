@@ -1,7 +1,146 @@
 """!
+@mainpage Software Overview
+
+@section intro_sec Introduction
+
+This main page covers the workings of the main.py file used for this project, as well as the files that were used to make the whole system work.
+
+@section file_sec Files
+
+This is an overview of the files that we wrote and utilized:
+
+@subsection controller_sec controller.py
+
+This file is used as a high-level proportional controller for our motors. We use it to control the desired position of our motors, and also to interface with some of the lower-level files, seen below.
+
+@subsection csv_sec csv_reader.py
+
+This file was originally used for a plotter, but for the purposes of this project we adapted it to read the output of the thermal camera. We wrote a method in the class that reads the camera data, and then calculates the hottest thermal column, which is what we used to pick an aiming point.
+
+@subsection encoder_sec encoder_reader.py
+
+This file is a fairly self-explanatory class. We use it to read from the encoders and handle all the calculations related to determining the position of the motors. This file is referenced by the controller to read the motor positions.
+
+@subsection mlx_sec mlx_cam.py
+
+This is a file that was provided to us to read the infrared camera output. It was utilized in Task 2 of our main file.
+
+@subsection motor_sec motor_driver.py
+
+This file is used to control the speed of the motors. It takes a desired pwm output and feeds it to the motor driver. This file is also referenced by the controller, which uses this file and the encoder reader to create an effective proportional controller.
+
+@section task_sec Tasks
+
+The following are the tasks and states used in the main file of this project:
+
+@subsection t1_sec Task 1
+
+Task 1 runs the panning motion for motor #1. This task first moves the turret into the 
+    aiming position (180 degrees from initial position). Then, updates the panning motor 
+    setpoint calculated by the thermal camera and runs until the PWM signal falls below 50%
+    for more than 20 cycles and sets the panning motor duty cycle to 0 and waits for the trigger
+    motor to complete its task. These are the states that are utilized in Task 1:
+
+@subsubsection t1s0_sec State 0
+
+This state is an initialization state for the panning motor that sets up the enable, pwm, and encoder pins, as well as
+    establishing the controller class instance for the pan.
+
+@subsubsection t1s1_sec State 1
+
+This state is used to capture an image. Once that is completed, we move to state 2.
+
+@subsubsection t1s2_sec State 2
+
+This state is used when the turret is panning to track the target. In this current implementation of our code, we are not actively tracking 
+    a target, we are instead waiting for the 5 seconds and then turning towards the target and firing. If we wanted to implement active
+    tracking in the future, this state is ready for that, with a few modifications.
+
+@subsubsection t1s3_sec State 3
+
+This state is an idle for the panning motor. This is used both when we are tracking the duel target, and when we are waiting for our turret to fire
+
+
+
+@subsection t2_sec Task 2
+
+Task 2 deals with the thermal camera. It initializes the camera's i2c communication
+    protocal them waits until the panning motor completes its initial movement to the aiming position
+    180 degrees from the initial postion. Then wait 3.25 seconds and get the image.
+    Then, using the csv_reader class, calculate the column with the maximum summed thermal
+    signature and calculate the setpoint based on the column. These are the states that are utilized in Task 1:
+
+@subsubsection t2s0_sec State 0
+
+This state is an initialization state for the camera that intitializes the mlx_cam class instance, as well as setting the refresh rate of the camera.
+
+@subsubsection t2s1_sec State 1
+
+This state is used to spin the whole turret 180 degrees at the start of the duel. Once it has turned, it switches to state 3.
+
+@subsubsection t2s2_sec State 2
+
+This state utilizes the csv reader to interpret the data that was captured by the camera in state 1. This gives us a column from the data that we need to
+    aim at. This moves us to state 3.
+
+@subsubsection t2s3_sec State 3
+
+This state takes the data that we got from the csv reader and uses trigonometry and information about our camera and setup geometry to calculate the angle 
+    that our turret needs to turn to correctly aim at the target, and then it uses a shared variable to pass that information to Task 1 and 3.
+    
+@subsubsection t2s4_sec State 4
+
+This state waits for the turret to fire and does not take any images that may cause lag.
+
+@subsubsection t2s5_sec State 5
+
+This state waits for the panning motor to spin 180 degrees at the start of the duel before taking any images.
+
+    
+@subsection t3_sec Task 3
+
+Task 3 runs the trigger motion for the motor #2. First, task 3 waits until the panning
+    motor reaches the setpoint calculated by the thermal camera. Then, it runs the trigger motor
+    to a setpoint of 30 degrees, then returns to its intial position. The states it uses are below:
+
+@subsubsection t3s0_sec State 0
+
+This state is an initialization state for the trigger motor that sets up the enable, pwm, and encoder pins, as well as
+    establishing the controller class instance for the trigger.
+
+@subsubsection t3s1_sec State 1
+
+This state is used to wait until the turret is ready to fire
+
+@subsubsection t3s2_sec State 2
+
+This state is used when the turret is firing. This activates the trigger motor to pull until it reaches the desired setpoint that we 
+    tested to guarantee that the turret fires.
+
+@subsubsection t3s3_sec State 3
+
+This state returns the trigger mechanism to its zero location after firing.
+
+@subsection t4_sec Task 4
+
+Task 4 is a simple task that acts as our safety system. Our design used a safety wire that when pulled, shuts down the whole system. The states used are as follows:
+
+@subsubsection t4s0_sec State 0
+
+This state simple initializes the variables used for the safety wire.
+
+@subsubsection t4s1_sec State 1
+
+This state is where the safety task always operates after initialization. It checks that the wire is still connected. If the wire is pulled, then the system is halted and will no longer
+    operate until it is reset and the safety wire is replaced.
+
+
+"""
+
+"""!
 @file main.py
 
-    This is the main file for the term project. 
+This is the main file for the term project. 
 
 @author Aiden Taylor, Jack Foxcroft, Julia Fay
 @date   2024-Mar-18
