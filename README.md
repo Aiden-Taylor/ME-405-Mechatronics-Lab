@@ -36,3 +36,19 @@ The system was also prone to missing its target which was the cause of many diff
 The triggering mechanism also had its fair share of issues, mainly stemming from the torque required to trigger the Nerf gun. We recommend either using some sort of mechanical leverage to trigger the gun or selecting a higher torque servo motor for triggering to increase the repeatability of this system.
 
 One software system that would be really interesting to implement would be real-time tracking. Our system takes one image of the target and calculates a setpoint based on the distance to the target, and the image column that the target was identified in. However, this required us to take the image after the target had stopped moving (after the five seconds had elapsed) to make certain that the setpoint calculated was correct. If real-time tracking was implemented, we might be able to calculate new setpoints every second or quicker to trigger the Nerf gun before the 5 seconds were up.
+
+## Task Diagram and FSMs
+### Task Diagram
+![tdiag](taskdiag.png)
+
+### Task 1 Finite State Machine
+![t1diag](t1statediag.png)
+
+### Task 2 Finite State Machine
+![t1diag](t2statediag.png)
+
+### Task 3 Finite State Machine
+![t1diag](t3statediag.png)
+
+### Task 4 Finite State Machine
+![t1diag](t4statediag.png)
