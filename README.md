@@ -1,4 +1,5 @@
 # ME 405 Term Project
+### Authors: Aiden Taylor, Jack Foxcroft, Julia Fay
 For our ME 405 term project we have designed a tracking and triggering system for a Nerf gun that utilizes two servo motors and a thermal camera to hit a target. These components were controlled by a Nucleo STM32L476 microcontroller, and the software was coded in Python and micropython. This design was to be used for educational purposes by students of ME 405. The purpose of the Nerf gun system was to participate in a duel against similar systems designed by classmates. Two participants were to stand behind their Nerf gun, move around for five seconds, and freeze while the opponent's gun tried to shoot them. Our system was ultimately successful in aiming, triggering, and hitting our opponent.
 
 ## Hardware and Mechanical Design
