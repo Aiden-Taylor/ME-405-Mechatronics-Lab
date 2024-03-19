@@ -134,10 +134,6 @@ This state simple initializes the variables used for the safety wire.
 This state is where the safety task always operates after initialization. It checks that the wire is still connected. If the wire is pulled, then the system is halted and will no longer
     operate until it is reset and the safety wire is replaced.
 
-
-"""
-
-"""!
 @file main.py
 
 This is the main file for the term project. 
@@ -145,6 +141,7 @@ This is the main file for the term project.
 @author Aiden Taylor, Jack Foxcroft, Julia Fay
 @date   2024-Mar-18
 """
+
 
 #import all relevant modlues and files 
 import gc
