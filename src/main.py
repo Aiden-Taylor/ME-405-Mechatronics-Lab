@@ -31,9 +31,13 @@ This file is used to control the speed of the motors. It takes a desired pwm out
 
 @section task_sec Tasks
 
+@image html taskdiag.png
+
 The following are the tasks and states used in the main file of this project:
 
 @subsection t1_sec Task 1
+
+@image html t1statediag.png
 
 Task 1 runs the panning motion for motor #1. This task first moves the turret into the 
     aiming position (180 degrees from initial position). Then, updates the panning motor 
@@ -63,6 +67,8 @@ This state is an idle for the panning motor. This is used both when we are track
 
 
 @subsection t2_sec Task 2
+
+@image html t2statediag.png
 
 Task 2 deals with the thermal camera. It initializes the camera's i2c communication
     protocal them waits until the panning motor completes its initial movement to the aiming position
@@ -99,6 +105,8 @@ This state waits for the panning motor to spin 180 degrees at the start of the d
     
 @subsection t3_sec Task 3
 
+@image html t3statediag.png
+
 Task 3 runs the trigger motion for the motor #2. First, task 3 waits until the panning
     motor reaches the setpoint calculated by the thermal camera. Then, it runs the trigger motor
     to a setpoint of 30 degrees, then returns to its intial position. The states it uses are below:
@@ -122,6 +130,8 @@ This state is used when the turret is firing. This activates the trigger motor t
 This state returns the trigger mechanism to its zero location after firing.
 
 @subsection t4_sec Task 4
+
+@image html t4statediag.png
 
 Task 4 is a simple task that acts as our safety system. Our design used a safety wire that when pulled, shuts down the whole system. The states used are as follows:
 
