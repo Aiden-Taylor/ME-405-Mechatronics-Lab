@@ -31,6 +31,8 @@ This file is used to control the speed of the motors. It takes a desired pwm out
 
 @section task_sec Tasks
 
+IMAGE_PATH = my_image_dir
+
 @image html taskdiag.png
 
 The following are the tasks and states used in the main file of this project:
